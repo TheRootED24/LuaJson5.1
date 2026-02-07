@@ -1,32 +1,31 @@
-#include "lstr.h"
+#include "str.h"
 
-struct lua_str lua_str_s(const char *s) {
-  struct lua_str str;
-  str.buf = (char *) s, str.len = (s == NULL) ? 0 : strlen(s);
+
+struct mg_str mg_str_s(const char *s) {
+  struct mg_str str = {(char *) s, s == NULL ? 0 : strlen(s)};
   return str;
 }
 
-struct lua_str lua_str_n(const char *s, size_t n) {
-  struct lua_str str;
-  str.buf = (char *) s, str.len = n;
+struct mg_str mg_str_n(const char *s, size_t n) {
+  struct mg_str str = {(char *) s, n};
   return str;
 }
 
-static int lua_tolc(char c) {
+static int mg_tolc(char c) {
   return (c >= 'A' && c <= 'Z') ? c + 'a' - 'A' : c;
 }
 
-int lua_casecmp(const char *s1, const char *s2) {
+int mg_casecmp(const char *s1, const char *s2) {
   int diff = 0;
   do {
-    int c = lua_tolc(*s1++), d = lua_tolc(*s2++);
+    int c = mg_tolc(*s1++), d = mg_tolc(*s2++);
     diff = c - d;
   } while (diff == 0 && s1[-1] != '\0');
   return diff;
 }
 
-struct lua_str lua_strdup(const struct lua_str s) {
-  struct lua_str r = {NULL, 0};
+struct mg_str mg_strdup(const struct mg_str s) {
+  struct mg_str r = {NULL, 0};
   if (s.len > 0 && s.buf != NULL) {
     char *sc = (char *) calloc(1, s.len + 1);
     if (sc != NULL) {
@@ -39,7 +38,7 @@ struct lua_str lua_strdup(const struct lua_str s) {
   return r;
 }
 
-int lua_strcmp(const struct lua_str str1, const struct lua_str str2) {
+int mg_strcmp(const struct mg_str str1, const struct mg_str str2) {
   size_t i = 0;
   while (i < str1.len && i < str2.len) {
     int c1 = str1.buf[i];
@@ -53,11 +52,11 @@ int lua_strcmp(const struct lua_str str1, const struct lua_str str2) {
   return 0;
 }
 
-int lua_strcasecmp(const struct lua_str str1, const struct lua_str str2) {
+int mg_strcasecmp(const struct mg_str str1, const struct mg_str str2) {
   size_t i = 0;
   while (i < str1.len && i < str2.len) {
-    int c1 = lua_tolc(str1.buf[i]);
-    int c2 = lua_tolc(str2.buf[i]);
+    int c1 = mg_tolc(str1.buf[i]);
+    int c2 = mg_tolc(str2.buf[i]);
     if (c1 < c2) return -1;
     if (c1 > c2) return 1;
     i++;
@@ -67,7 +66,7 @@ int lua_strcasecmp(const struct lua_str str1, const struct lua_str str2) {
   return 0;
 }
 
-bool lua_match(struct lua_str s, struct lua_str p, struct lua_str *caps) {
+bool mg_match(struct mg_str s, struct mg_str p, struct mg_str *caps) {
   size_t i = 0, j = 0, ni = 0, nj = 0;
   if (caps) caps->buf = NULL, caps->len = 0;
   while (i < p.len || j < s.len) {
@@ -86,7 +85,7 @@ bool lua_match(struct lua_str s, struct lua_str p, struct lua_str *caps) {
     } else if (i < p.len && (p.buf[i] == '*' || p.buf[i] == '#')) {
       if (caps && !caps->buf) caps->len = 0, caps->buf = &s.buf[j];  // Init cap
       ni = i++, nj = j + 1;
-    } else if (nj > 0 && nj <= s.len && ((ni < p.len && p.buf[ni] == '#') || s.buf[j] != '/')) {
+    } else if (nj > 0 && nj <= s.len && (p.buf[ni] == '#' || s.buf[j] != '/')) {
       i = ni, j = nj;
       if (caps && caps->buf == NULL && caps->len == 0) {
         caps--, caps->len = 0;  // Restart previous cap
@@ -101,20 +100,20 @@ bool lua_match(struct lua_str s, struct lua_str p, struct lua_str *caps) {
   return true;
 }
 
-bool lua_span(struct lua_str s, struct lua_str *a, struct lua_str *b, char sep) {
+bool mg_span(struct mg_str s, struct mg_str *a, struct mg_str *b, char sep) {
   if (s.len == 0 || s.buf == NULL) {
     return false;  // Empty string, nothing to span - fail
   } else {
     size_t len = 0;
     while (len < s.len && s.buf[len] != sep) len++;  // Find separator
-    if (a) *a = lua_str_n(s.buf, len);                // Init a
-    if (b) *b = lua_str_n(s.buf + len, s.len - len);  // Init b
+    if (a) *a = mg_str_n(s.buf, len);                // Init a
+    if (b) *b = mg_str_n(s.buf + len, s.len - len);  // Init b
     if (b && len < s.len) b->buf++, b->len--;        // Skip separator
     return true;
   }
 }
 
-bool lua_str_to_num(struct lua_str str, int base, void *val, size_t val_len) {
+bool mg_str_to_num(struct mg_str str, int base, void *val, size_t val_len) {
   size_t i = 0, ndigits = 0;
   uint64_t max = val_len == sizeof(uint8_t)    ? 0xFF
                  : val_len == sizeof(uint16_t) ? 0xFFFF

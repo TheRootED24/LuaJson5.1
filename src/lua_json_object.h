@@ -15,6 +15,127 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+ // ####################################################################################### API DOCUMENTATION ################################################################################################### //
+
+ /***
+*JSON.object Class
+@classmod object
+*/
+
+/**
+ * render an object as valid json
+ * @function object:tojson
+ * @return string: json string 
+ * 
+ *@usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
+ */
+//static int lua_json_object_tojson(lua_State *L) 
+
+/**
+ * Create a new array containing the keys of an object
+ * @function object:keys
+ * @return array: json array of the objects keys 
+ * 
+ * @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
+ * local keys = obj:keys() 
+ * print(keys:tojson())--> ["test","age","root"]
+ */
+//static int lua_json_object_keys(lua_State *L) 
+
+
+/**
+ * move an existing key/value pair to any exisiting index
+ * @function object:move
+ *  @param  move string or number: exisiting key or index of pair to move
+ *  @param to string or number: exisiting key or index a pair to start the shift right
+ *  @return no value retured.
+ * 
+ *@usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
+ * obj:move("root", "test")
+ * print(obj:tojson()) --> {"root":null,"test":"obj","age":99}
+ */
+// static int lua_json_object_move(lua_State *L)
+
+/**
+ * insert new key/value pair at any existing position
+ * @function object:insert
+ * @param at string or number: exisitng key or index to insert the new pair
+ * @param new          string: new key
+ * @param value           any:  new value
+ * @return number: updated size of object.
+ * 
+ * @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
+ * local s = obj:insert(0, "new","value")
+ * print(obj:tojson()) --> {"new":"value","test":"obj","root":null,"age":99}
+ * print(s) --> 4 
+ */
+// static int lua_json_object_insert(lua_State *L)
+
+/**
+ * push new key/value pair to end of object
+ * @function object:push
+ * @param key string: new key
+ * @param value any: new value
+ * @return number: updated size of object.
+ * 
+ * @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
+ * local s = obj:push("new","value")
+ * print(obj:tojson()) --> {"test":"obj","age":99,"root":null,"new":"value"}
+ * print(s) --> 4
+ */
+// static int lua_json_object_push(lua_State *L)
+
+/**
+ * pop the last key/value pair from object
+ * @function object:pop
+ * @return any: the popped value.
+ * 
+ * @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
+ * local p = obj:pop()
+ * print(obj:tojson()) --> {"test":"obj","age":99}
+ * print(p) --> null
+ */
+// static int lua_json_object_pop(lua_State *L)
+
+/**
+ * Remove the first key/value pair from object. 
+ * @function object:shift
+ * @return any: the shifted value.
+*  @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
+ * local s = obj:shift()
+ * print(obj:tojson()) --> {"age":99,"root":null}
+ * print(s) --> obj
+ */
+// static int lua_json_object_shift(lua_State *L)
+
+ /**
+ * add one or more key/value pairs to the beginning of an object.
+ * @function object:unshift
+ * @param key string: new key
+ * @param val any: new value
+ * @param[opt] ...  additional pairs
+ * @return number: the updated object size.
+ * @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
+ * local npairs = obj:unshift("name", "teddy", "id", 101, "admin", false)) 
+ * print(obj:tojson()) --> {"name":"teddy","id":101,"admin":false,"age":99,"root":null}
+ * print(npairs) --> 5
+ */
+//static int lua_json_object_unshift(lua_State *L)
+
+/**
+ * reverses the indexes of an object key/value pairs.  
+ * @function object:reverse
+ * @param from string or number: key or index to start reversal. (optional) 
+ * @param to string or number: key or index to end of reversal. (optional)
+ * @return no value returned
+ * @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null, "name":"teddy"}
+ * npairs = obj:reverse("test", "root")) 
+ * print(obj:tojson()) --> {""root":null,"age":99,test":"obj","name":"teddy"}
+ */
+//static int lua_json_object_reverse(lua_State *L)
+
+
+// ####################################################################################### END API DOCUMENTATION ############################################################################################### //
 
 #ifndef LUA_JSON_OBJECT_H
 #define LUA_JSON_OBJECT_H
@@ -39,6 +160,7 @@ extern "C" {
 #include <stdlib.h>
 #include <errno.h>
 // includes
+
 #include "lua_json.h"
 
 #ifdef __cplusplus
@@ -47,14 +169,13 @@ extern "C" {
 
 typedef struct ref ref;
 typedef struct json_elm json_elm;
+typedef struct elm_ids elm_ids;
+typedef struct json_opts opts;
+
+extern const char *marshal_json[], *marshal_lua[], *fields[];
 
 void lua_json_open_object(lua_State *L);
-
-int lua_json_object_newindex(lua_State *L);
-int lua_json_object_index(lua_State *L);
 int lua_json_object(lua_State *L);
 int lua_json_elm_parse_object(lua_State *L);
-int __lua_json_render_elm_object(lua_State *L, ref *seen);
-int _lua_json_elm_key_to_idx(lua_State *L, const char *key, bool add);
-int _lua_json_elm_idx_to_key(lua_State *L, int idx) ;
+
 #endif

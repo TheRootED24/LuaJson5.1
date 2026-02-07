@@ -16,10 +16,129 @@
  *  limitations under the License.
  */
 
+// ####################################################################################### API DOCUMENTATION ################################################################################################### //
+
+/***
+*Base Class for all JSON elements
+@module JSON
+* 
+*/
+
+/***
+ * Introduct
+ * 
+ */
+
+
+/**
+ * Create a new array.
+ * @function .array
+ * @param arr array name 
+ * @param[opt] ... elements
+ * @return an initialized lua json array.
+ * @usage local a = JSON.array(a, 1,2,3.45,"test",true,null)
+ * print(a[0])  --> 1
+ * print(a[2])  --> 3.45
+ * print(a[#a-1]) --> null
+ */
+// int lua_json_array_new(lua_State *L, bool parse)
+
+/**
+ * Create a new object.
+ * @function .object
+ * @param obj object name
+ * @param[opt] ... key value pair/s
+ * @return an initialized lua json object
+ * @usage local o = JSON.object(o, "test","obj", "age",99, "root",null)
+ * print(o.test) --> obj
+ * print(o.age)  --> 99
+ * print(o.root) --> null
+ */
+//static int lua_json_object_new (lua_State *L, bool parse)
+
+/**
+ * Serialize a lua json element to json string.
+ * @function .parse
+ * @param elm lua table
+ * @return a valid json element
+ * @usage local a = JSON.parse('[1,2,3.45,true]')
+ * print(a:tojson()) --> [1,2,3.45,true]
+ * print(a[0])  --> 1
+ */
+//int lua_json_elm_tojson(lua_State *L)
+
+/**
+ * Serialize a lua table to json string.
+ * @function .parse_lua
+ * @param table lua table
+ * @return a valid json representation of the table.
+ * @usage local t = {1,2,3.45,"test",true}
+ * print(t) --> table: 0x5c92968f1c90
+ *
+ * local ta = JSON.parse_lua(ta, t)
+ * print(ta) --> array: 0x5c92968f09a8
+ * print(ta[0])  --> 1
+ * print(ta[2])  --> 3.45
+ * print(ta[#ta]) --> true
+ */
+//int lua_json_elm_tojson(lua_State *L)
+
+/**
+ * Serialize lua json element to json string.
+ * @function .stringify
+ * @param elm lua json element
+ * @return a valid json representation of the lua json element.
+ *@usage local a = JSON.parse('[1,2,3.45,true]')
+ * print(a:tojson()) --> [1,2,3.45,true]
+ * local json_a = JSON.stringify(a)
+ * print(json_a) --> [1,2,3.45,"test",true]
+ * 
+ */
+
+/**
+ * Serialize lua json object to json string.
+ * @function .stringify_lua
+ * @param elm lua json element
+ * @return a valid json representation of the lua json element.
+ * @usage local t = {1,2,3.45,"test",true}
+ * print(t) --> table: 0x5c92968f1c90
+ *
+ * local json_a = JSON.stringify_lua(t)
+ * print(json_a) --> [1,2,3.45,"test",true]
+ */
+
+ /**
+ * Convert a lua table to a lua json element.
+ * @function .parse_lua
+ * @param tname name of new element
+ * @param t lua table
+ * @return an initialized lua json array or object.
+ * @usage local t = {1,2,3.45,"test",true}
+ print(t) --> table: 0x5c92968f1c90
+ *
+ * local ta = JSON.parse_lua(ta, t)
+ * print(ta) --> array: 0x5c92968f09a8
+ * print(ta[0])  --> 1
+ * print(ta[2])  --> 3.45
+ * print(ta[#ta]) --> true
+ */
+
+/**
+ * Convert a lua json element to a table.
+ * @function .tolua
+ * @param tname name of new element
+ * @param elm lua json element
+ * @return lua table
+ */
+//int lua_json_tolua(lua_State *L)
+
+// ####################################################################################### END API DOCUMENTATION ############################################################################################### //
+
 #ifndef LUA_JSON_H
 #define LUA_JSON_H
 
 #define LUA_JSON "JSON"
+
 
 #ifndef __cplusplus
 // LUA LIBS FOR gcc
@@ -39,133 +158,284 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <errno.h>
 // includes
-#include "includes/libjson/json.h"
-#include "includes/libjson/lstr.h"
+#include "includes/mongoose/json.h"
+#include "includes/mongoose/str.h"
 
 #include "lua_json_array.h"
 #include "lua_json_object.h"
+#include "lua_json_lua.h"
+#include "lua_json_marshal.h"
+#include "lua_json_elm_event.h"
 
 #ifdef __cplusplus
 }
 #endif
 
+#if LUA_VERSION_NUM >= 504
+    /* Lua 5.4 uses indexed uservalues (slot 1 is the legacy fenv equivalent) */
+    #define get_json_table(L, i)  lua_getiuservalue(L, i, 1)
+    #define set_json_table(L, i)  lua_setiuservalue(L, i, 1)
+#elif LUA_VERSION_NUM >= 502
+    /* Lua 5.2 and 5.3 */
+    #define get_json_table(L, i)  lua_getuservalue(L, i)
+    #define set_json_table(L, i)  lua_setuservalue(L, i)
+#else
+    /* Lua 5.1 Original */
+    #define get_json_table(L, i)  lua_getfenv(L, i)
+    #define set_json_table(L, i)  lua_setfenv(L, i)
+#endif
+
+#define VLEN_ADD(dst, src, sub_ptr) do {                                   \
+    const elm_vlen *__s = (sub_ptr);                                       \
+    (dst).rlen   += __s ? ((src).rlen   - __s->rlen)   : (src).rlen;       \
+    (dst).quoted += __s ? ((src).quoted - __s->quoted) : (src).quoted;     \
+    (dst).nkeys  += __s ? ((src).nkeys  - __s->nkeys)  : (src).nkeys;      \
+} while(0)
+
+extern const char *marshal_json[], *marshal_lua[];
+extern void dumpstack(lua_State *L, const char *msg);
+
+typedef struct event event;
+typedef struct Subject Subject;
+typedef void (*NotifyFn)(void* context, event *ev);
+
 // GLOBAL DEFINES
-#define DEBUG 1
+#define DEBUG 0
+//#define USE_THREADS
+
+// --- Disable Event Threading Support ---
+#define LOCK(s)   ((void)0)
+#define UNLOCK(s) ((void)0)
+#define INIT_LOCK(s) (1)
+#define DESTROY_LOCK(s) ((void)0)
 
 #define btoa(x) ((x) ? "true" : "false")
+
+#define null "null"
 #define LUA_TNULL (-2)
+extern const char *NULL_CACHE;
 
-enum LUA_JSON_TYPES {
-	JSON_NUMBER_TYPE,		 // 0
-	JSON_BOOL_TYPE,			 // 1
-	JSON_LONG_TYPE,			 // 2
-	JSON_STRING_TYPE,		 // 3
-	JSON_ARRAY_TYPE,		 // 4
-	JSON_OBJECT_TYPE,		 // 5
-	JSON_NESTED_ARRAY_TYPE,	 // 6
-	JSON_NESTED_OBJECT_TYPE, // 7
-	JSON_ROOT_TYPE,			 // 8
-	JSON_NULL_TYPE			 // 9
-};
-
-typedef struct lua_str lua_String;
-
-typedef struct lua_cbuffer_t{
-    char* data;
-    size_t size;
-
-} lua_Cbuffer;
-
-typedef struct {
-	struct lua_str *json;
-	const char *key;
-	char index;
-	int type;
-	bool isRoot;
-	double num;
-	long l;
-	int i;
-	bool b;
-	char *str;
-}parse_elm;
-
-typedef struct ref {
-	int depth, max;
-	uintptr_t ids[150], root;
-	int elms;
-	int ltype;
-	bool cont, isRoot;
-	int commas, vals;
-	int ptype, last_stack;
-	char* b;
-
-	bool(*check_next)(struct ref*, uintptr_t);
-
-}ref;
+#define MARSHAL_JSON 	0
+#define MARSHAL_LUA 	1
 
 typedef enum {
-    JsonKey,    //0
-    ObjString,  //1
-    ObjNumber,  //2
-    ObjBool,    //3
-    ObjNull,	//4
-    ArrString,  //5
-    ArrNumber,  //6
-    ArrBool,    //7
-    ArrNull,	//8
-    JsonNext,   //9
-    OpenObj,    //10
-    CloseObj,   //11
-    OpenArr,    //13
-    CloseArr,   //14
-    NestedObj,  //12
-    NestedArr   //15
+	JSON_NUMBER_TYPE,		// 0
+	JSON_BOOL_TYPE,			// 1
+	JSON_LONG_TYPE,			// 2
+	JSON_STRING_TYPE,		// 3
+	JSON_ARRAY_TYPE,		// 4
+	JSON_OBJECT_TYPE,		// 5
+	JSON_NESTED_ARRAY_TYPE,	 	// 6
+	JSON_NESTED_OBJECT_TYPE, 	// 7
+	JSON_ROOT_TYPE,			// 8
+	JSON_NULL_TYPE,			// 9
+	JSON_INVALID_TYPE		// 10
+}LUA_JSON_TYPES;
+
+typedef enum {
+	ObjKey,     	//0
+	ObjString,  	//1
+	ObjNumber,  	//2
+	ObjBool,    	//3
+	ObjNull,	//4
+	ArrString,  	//5
+	ArrNumber,  	//6
+	ArrBool,    	//7
+	ArrNull,	//8
+	Next,   	//9
+	OpenObj,    	//10
+	CloseObj,   	//11
+	OpenArr,    	//12
+	CloseArr,   	//13
+	EscObjString,  	//14
+	EscArrString,   //15
+	EscObjKey,    	//16
+	EscObjNumber, 	//17
+	EscObjBool,	//18
+	EscObjNull	//19
 }Type;
 
-// BASE JSON ELM CLASS
-typedef struct json_elm {
-	// paths
-    struct json_elm *root;
-    struct json_elm *self;
+typedef enum {
+	ids,
+	keys,
+}env_field;
 
-	int vtable;
-    uintptr_t id;
-    
-	// analytics
-    size_t type;
-    size_t nelms;
-    size_t rlen;
-	size_t plen;
-    size_t children;
+typedef union env_val{
+	int num;
+	uintptr_t env_id;
+	const char *key;
+}env_val;
 
-    lua_String *LS;
+typedef enum {
+	NEW_INDEX,
+	EXT_INDEX,
+	NIL_INDEX
+}index_type;
+
+typedef struct new_vlen {
+    size_t rlen, quoted, nkeys, trefs;
+}elm_vlen;
+
+typedef struct elm_rlen {
+	json_elm *root, *sub, *unsub;
+
+	elm_vlen base;
+	elm_vlen new;
+	elm_vlen ex;
+
+	uint8_t toi;
+	uint8_t vtype, ex_vtype;
+	bool is_exval, is_nil, is_null;
+
+}elm_rlen;
+
+
+typedef struct elm_event {
+	json_elm *root;
+	struct Subject *on_newindex, *on_change, *on_env;
+	int (*init)		(Subject *s);
+	void (*sub)		(Subject *s, void *ctx, NotifyFn fn);
+	void (*unsub)		(Subject *s, void *ctx, NotifyFn fn);
+	void (*set)		(Subject *s, event *ev);
+	void (*get)		(Subject *s, event *ev);
+	void (*cleanup)		(Subject *s);
+}elm_event;
+
+struct json_ops {
+    // Key/Index Logic (Specific to Objects/Arrays)
+    int (*key_to_idx)(json_elm *, bool);
+    int (*idx_to_key)(json_elm *);
+    void (*check_idx)(json_elm *);
+
+    // Common Logic (Render, Parse, etc.)
+    void (*init_rlen)(json_elm *, elm_rlen *);
+    int (*tostring)(lua_State *);
+    int (*stringify)(lua_State *);
+    int (*del)(lua_State *);
+    int (*parse)(lua_State *);
+    int (*render)(lua_State *, ref *);
+};
+
+// Marshal
+typedef struct marshal_t {
+	json_elm *elm;
+	uint8_t mtype;
+	bool escape;
 	
-    bool isRoot;
+	const char **mode;
+	int(*set_mode)(lua_State*);
 
-	int nums, longs, bools, strings, arrays, objects, nulls, nestedarrays, nestedobjects;
-    const char *typename, *key, *val;
-	int(*newindex)(lua_State*);
-	int(*index)(lua_State*);
+	int(*next)	(ref*);
 
-	int(*tostring)(lua_State*);
-	int(*tojson)(lua_State*);
-	int(*tocstr)(lua_State*);
-	int(*parse)(lua_State*);
+	int(*obj_open)	(ref*);
+	int(*obj_close)	(ref*);
+	
+	int(*obj_key)	(lua_State*, json_elm*, ref*);
+	int(*obj_string)(lua_State*, json_elm*, ref*);
+	int(*obj_number)(lua_State*, json_elm*, ref*);
+	int(*obj_bool)	(lua_State*, json_elm*, ref*);
 
-} json_elm;
+	int(*arr_open)	(ref*);
+	int(*arr_close)	(ref*);
 
-json_elm *check_json_elm(lua_State *L, int pos);
-void json_type(parse_elm *elm);
-int lua_json_elm_newindex(lua_State *L);
-int lua_json_elm_index(lua_State *L);
+	int(*arr_string)(lua_State*, json_elm*, ref*);
+	int(*arr_number)(lua_State*, ref*);
+	int(*arr_bool)	(lua_State*, ref*);
+	
+} marshal;
+
+typedef struct ref {
+	lua_State *ML;
+	luaL_Buffer *B;
+	json_elm *elm, *nested;
+	marshal *marshal;
+	uint8_t mode;
+	size_t rlen, quoted, nkeys, has_refs;
+	bool isRoot, escape;
+	const char **Marshal;
+}ref;
+
+struct json_elm {
+    /* 1. POINTERS (8-byte aligned) */
+    struct json_elm *root;
+    struct json_elm *nested;
+    lua_State *L;
+    elm_event *event;
+    elm_vlen *base;
+    
+    /* 2. DATA PAYLOAD */
+    const char *typename;
+    const char *key;
+    const char *val;
+    
+    // CRITICAL: Pointer to the VTable (Standardized)
+    const struct json_ops *opts; 
+
+    uintptr_t env_id;
+    size_t nelms;
+    size_t klen;
+    size_t vlen;
+
+    /* 3. THE COMPRESSED BLOCK (Replaces ~20 bytes with 8 bytes) */
+    
+    // A. The Index (16 bits)
+    uint16_t idx;
+
+    // B. The Mode (8 bits - kept full for safety)
+    uint8_t mode;
+    
+    // C. The Nibbles (4 bits each - Range 0-15)
+    uint8_t type   : 4;
+    uint8_t toi    : 4;
+    uint8_t ktype  : 4;
+    uint8_t vtype  : 4;
+
+    // D. The Flags (1 bit each)
+    bool is_nil    : 1;
+    bool escape    : 1;
+    bool index_json: 1;
+    bool stale     : 1;
+    bool align     : 1;
+    bool is_ref    : 1;
+
+    // Padding: Compiler adds ~2 bytes here automatically to reach 8-byte alignment
+};
+typedef struct json_elm json_elm;
+
+json_elm *check_json_elm(lua_State *L, int pos, bool align);
+int lua_json_is_elm(lua_State *L, int pos);
+bool lua_json_elm_contains(lua_State *L, json_elm *elm, json_elm *nested);
+uint8_t type_of_index(json_elm *elm);
+
 int lua_json_elm_len(lua_State *L);
+int lua_json_elm_size(lua_State *L);
 int lua_json_elm_tostring(lua_State *L);
-int lua_json_elm_tojson(lua_State *L);
+int lua_json_elm_to_table(lua_State *L);
+int lua_json_elm_is_stale(lua_State *L);
+int lua_json_elm_index_base(lua_State *L);
+int lua_json_elm_stringify(lua_State *L);
 int lua_json_elm_parse(lua_State *L);
-int get_json_val_length(lua_State *L, json_elm *elm);
-int test_func(lua_State *L);
-bool check_next(ref *seen, uintptr_t next);
+int lua_json_elm_get_rlen(lua_State *L);
+int lua_json_elm_env_add(lua_State *L, json_elm *elm, env_val *val, env_field field);
+int lua_json_elm_env_insert(lua_State *L, json_elm *elm, int idx, env_val *val, env_field field);
+int lua_json_elm_env_rem(lua_State *L, json_elm *elm, uintptr_t env_id, env_field field);
+int lua_json_elm_env_get(lua_State *L, json_elm *elm , int idx, env_field field);
+int lua_json_elm_get_quoted(lua_State *L);
+int lua_json_elm_get_nkeys(lua_State *L);
 
-#endif
+void alloc_events(json_elm *elm);
+void lua_json_elm_unsub(json_elm *elm, json_elm *nested) ;
+void lua_json_elm_sub(json_elm *elm, json_elm *nested);
+void lua_json_elm_on_newindex(void* ctx, event *ev);
+void lua_json_elm_on_change(void* ctx, event *ev);
+void lua_json_env_on_change(void* ctx, event *ev);
+void lua_json_elm_get_val_length(lua_State *L, json_elm *elm, elm_rlen *erl);
+void lua_json_elm_check_idx(json_elm *elm);
+void lua_json_elm_init_rlen(json_elm *elm, elm_rlen *erl);
+void update_rlen(json_elm *elm, elm_rlen *erl);
+int lua_json_elm_print_refs(lua_State *L);
+
+#endif 
