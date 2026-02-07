@@ -1,24 +1,6 @@
-/*
- * LuaJson - a json api library for Lua
- *
- *   Copyright (C) 2026 TheRootED24 <TheRootED24@gmail.com>
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in JSONliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
 #include "lua_json.h"
 
-static void dumpstack(lua_State *L)
+/*static void dumpstack(lua_State *L)
 {
 	int top = lua_gettop(L);
 	for (int i = 1; i <= top; i++)
@@ -43,7 +25,7 @@ static void dumpstack(lua_State *L)
 			break;
 		}
 	}
-}
+}*/
 
 const char *Json[] = {
     "\"%s\":",      // JsonKey      0
@@ -63,9 +45,31 @@ const char *Json[] = {
 };
 
 json_elm *check_json_elm(lua_State *L, int pos) {
-    //dumpstack(L);
-    void *ud = luaL_checkudata(L, pos, "JSON.json");
-    luaL_argcheck(L, ud != NULL, pos, "`json element' expected");
+	json_elm *e = (json_elm*)lua_topointer(L, pos);
+	void *ud = NULL; 
+	
+	if(!e) { // if e is NULL force a lua error and bailout
+		ud = luaL_checkudata(L, pos, "JSON.json");
+		luaL_argcheck(L, ud != NULL, pos, "`json element' expected");
+	}		
+
+	switch(e->type){
+		case JSON_ARRAY_TYPE: {
+			ud = luaL_checkudata(L, pos, "JSON.array");
+    		luaL_argcheck(L, ud != NULL, pos, "`json array' expected");
+			break;
+		}
+		case JSON_OBJECT_TYPE: {
+			ud = luaL_checkudata(L, pos, "JSON.object");
+    		luaL_argcheck(L, ud != NULL, pos, "`json object' expected");
+			break;
+		}
+		default: {
+			ud = luaL_checkudata(L, pos, "JSON.json");
+    		luaL_argcheck(L, ud != NULL, pos, "`json element' expected");
+			break;
+		}
+	}
 
 	return (json_elm*)ud;
 };
@@ -83,26 +87,27 @@ bool check_next(ref *seen, uintptr_t next) {
 
 int lua_json_elm_tojson(lua_State *L) {
 	json_elm *elm = check_json_elm(L, 1);
-	//printf("RLEN: %ld\n", elm->rlen);
+
 	ref seen = {0};
 	seen.root = (uintptr_t)lua_topointer(L, -1);
 	seen.ids[seen.elms++] = seen.root;
 	seen.check_next = &check_next;
 
 	seen.ltype = LUA_TUSERDATA;
-	seen.b = malloc(elm->rlen + 1); // 1MB should be enough for most cases
+	seen.b = malloc(elm->rlen + 1); 
 	memset(seen.b, 0, (elm->rlen + 1) );
 	
 	elm->type == JSON_ARRAY_TYPE ? __lua_json_render_elm_array(L, &seen) : __lua_json_render_elm_object(L, &seen);
 	size_t lt = strlen(seen.b)+1; // null term
-	elm->rlen = lt;
+	//printf("rlen: %ld jlen: %ld\n", elm->rlen, lt);
+	elm->rlen = lt; //re-align rlen
 	//elm->rlen = lt;
-	printf("seen.b strlen: %ld/%ld\n", lt, elm->rlen);
+	//printf("seen.b strlen: %ld/%ld\n", lt, elm->rlen);
 
 	lua_pushstring(L, seen.b);
 	free(seen.b);
-	json_elm *e = check_json_elm(L, 1);
-	printf("RENDER LENGTH %ld\nPretty Length: %ld\nNESTED OBJECTS %d\n\n", elm->rlen, elm->plen, e->nestedobjects);
+	//json_elm *e = check_json_elm(L, 1);
+	//printf("RENDER LENGTH %d\nPretty Length: %ld\nNESTED OBJECTS %d\n\n", elm->plen, elm->rlen, e->nestedobjects);
 
 	return 1;
 
@@ -119,6 +124,15 @@ int lua_json_elm_tostring(lua_State *L) {
 };
 
 int lua_json_elm_len(lua_State *L) {
+    json_elm *elm = check_json_elm(L, 1);
+    if(elm) {
+        lua_pushinteger(L, elm->rlen);
+	}
+
+    return 1;
+};
+
+int lua_json_elm_size(lua_State *L) {
     json_elm *elm = check_json_elm(L, 1);
     if(elm) {
         lua_pushinteger(L, elm->nelms);
@@ -158,7 +172,7 @@ void json_type(parse_elm *elm) {
 		// all other types will be silently disgaurded by newindex
 
 	return;
-}
+};
 
 bool _isRoot = true;
 static int __lua_json_elm_parse(lua_State *L, struct lua_str json, int depth) {
@@ -170,7 +184,7 @@ static int __lua_json_elm_parse(lua_State *L, struct lua_str json, int depth) {
 	parse_elm elm = {0};
 	int idx = 0;
 	int n = 0, o = _lua_json_get(json, "$", &n);
-	jelm->plen = n;
+	if(_isRoot) jelm->plen = n;
 	if (json.buf[o] == '{' || json.buf[o] == '[') {
 		struct lua_str key, val, sub = lua_str_n(json.buf + o, (size_t)n);
 		size_t ofs = 0;
@@ -353,314 +367,36 @@ int lua_json_elm_parse(lua_State *L) {
 	struct lua_str json = lua_str(elm); 
 	__lua_json_elm_parse(L, json, -1);
 
-	json_elm *jelm = check_json_elm(L, 1);
+	//json_elm *jelm = check_json_elm(L, 1);
 
-	printf("PARSED ELM TYPE: %s\nPARSED LENGTH: %ld\n", jelm->typename, jelm->rlen);
+	//printf("PARSED ELM TYPE: %s\nPARSED LENGTH: %ld\n", jelm->typename, jelm->rlen);
 	
 	return 1;
 };
 
-int get_json_val_length(lua_State *L, json_elm *elm) {
-	dumpstack(L);
-	size_t rlen = 0;
-	int vtype = lua_type(L, -1);
-	switch(elm->type) {
-		case JSON_ARRAY_TYPE: {
-			//idx = luaL_checkinteger(L, -2);
-	
-			switch(vtype) {
-				case LUA_TUSERDATA: {
-					json_elm *nested = check_json_elm(L, -1);
-					nested->root = elm;
-					rlen += nested->rlen > 2 ? nested->rlen : 2;
-					//rlen += 1; // comma
-					break;
-				}
-				case LUA_TNUMBER: {
-					const char *val = lua_pushfstring(L, Json[ArrNumber], lua_tonumber(L, -1));
-					rlen += strlen(val)+1;
-					lua_pop(L, 1);
-					break;
-				}
-				case LUA_TBOOLEAN: {
-					const char *val = lua_pushfstring(L, Json[ArrBool], btoa(lua_toboolean(L, -1)));
-					rlen += strlen(val)+1;
-					lua_pop(L, 1);
-					break;
-				}
-				case LUA_TSTRING: {
-					size_t vlen = 0;
-					const char *val = lua_tolstring(L, -1, &vlen);
-					
-					// handle null sentinel here
-					// only perform strcmp if length 4 >null<
-					if ( vlen == 4 && val[0] == 'n') {
-						if (val && (strcmp(val, "null")) == 0) 
-							rlen += strlen(val)+1;
-					}
-					else 
-							rlen += strlen(val)+3;
+int lua_json_elm_info(lua_State *L) {
+	json_elm *elm = check_json_elm(L, 1);
+	if(lua_toboolean(L, 2) != 1) {
+		lua_pushnumber(L, elm->nelms);
+		lua_pushstring(L, elm->typename);
 
-					break;
-				}
-				//rlen++;
-			}
-			break;
-		}
-		case JSON_OBJECT_TYPE: {
-			//int vtype = lua_type(L, -1);
-			//const char *key = lua_tostring(L, -2);
-			//_lua_json_elm_key_to_idx(L, key, true);
-			//idx = luaL_checkinteger(L, -1);
-			//lua_pop(L, 1);
-
-			switch(vtype) {
-				case LUA_TUSERDATA: {
-					const char *val = lua_pushfstring(L, Json[JsonKey], elm->key);
-					rlen += strlen(val);
-					lua_pop(L, 1);
-
-					json_elm *nested = check_json_elm(L, -1);
-					nested->root = elm;
-					rlen += nested->rlen > 2 ? nested->rlen : 2;
-					break;
-				}
-				case LUA_TNUMBER: {
-					const char *val = lua_pushfstring(L, Json[ObjNumber], elm->key, lua_tonumber(L, -1));
-					rlen += strlen(val)+1;
-					lua_pop(L, 1);
-					break;
-				}
-				case LUA_TBOOLEAN: {
-					const char *val = lua_pushfstring(L, Json[ObjBool], elm->key, btoa(lua_toboolean(L, -1)));
-					rlen += strlen(val)+1;
-					lua_pop(L, 1);
-					break;
-				}
-				case LUA_TSTRING: {
-					size_t vlen = 0;
-					const char *val = lua_tolstring(L, -1, &vlen);
-					
-					// handle null sentinel here
-					// only perform strcmp if length 4 >null<
-					if (( vlen ) == 4 && val[0] == 'n') { 
-						if (strcmp(val, "null") == 0) {
-							//printf("VAL:%s == null\n", val);
-							vtype = LUA_TNULL;
-							val = lua_pushfstring(L, Json[ObjNull], elm->key, lua_tostring(L, -1));
-						}
-					}
-					else 
-							val = lua_pushfstring(L, Json[ObjString], elm->key, lua_tostring(L, -1));
-
-					rlen += strlen(val)+1;
-					lua_pop(L, 1);
-					break;
-				}
-				//rlen++;
-			}
-			break;
-		}
+		return 2;
 	}
-	//lua_settop(L, 0);
-	lua_pushnumber(L, rlen);
+	else
+		lua_pushfstring(L, "Elm Type: %s Elm Size: %d", elm->typename, (int)elm->nelms);
 
 	return 1;
-}
-
-int lua_json_elm_newindex(lua_State *L) {
-	//printf("****************************************** ELM NEW INDEX ***************************************************\n");
-	//dumpstack(L);
-	json_elm *elm = check_json_elm(L, -3);
-	size_t rlen = 0;
-	int idx = 0;
-	//dumpstack(L);
-	int ktype = lua_type(L, -2);
-	//int vtype = lua_type(L, -1);
-	
-	if(ktype == LUA_TTABLE) return 0;
-	//printf("ELM TYPE: %s\n", elm->typename);
-	switch(elm->type) {
-		case JSON_ARRAY_TYPE: {
-			idx = luaL_checkinteger(L, -2);
-			get_json_val_length(L, elm);
-			rlen += lua_tonumber(L, -1);
-			lua_pop(L, 1);
-			break;
-			/*switch(vtype) {
-				case LUA_TUSERDATA: {
-					json_elm *nested = check_json_elm(L, -1);
-					nested->root = elm;
-					rlen += nested->rlen > 2 ? nested->rlen : 2;
-					//rlen += 1; // comma
-					break;
-				}
-				case LUA_TNUMBER: {
-					const char *val = lua_pushfstring(L, Json[ArrNumber], lua_tonumber(L, -1));
-					rlen += strlen(val)+1;
-					lua_pop(L, 1);
-					break;
-				}
-				case LUA_TBOOLEAN: {
-					const char *val = lua_pushfstring(L, Json[ArrBool], btoa(lua_toboolean(L, -1)));
-					rlen += strlen(val)+1;
-					lua_pop(L, 1);
-					break;
-				}
-				case LUA_TSTRING: {
-					size_t vlen = 0;
-					const char *val = lua_tolstring(L, -1, &vlen);
-					
-					// handle null sentinel here
-					// only perform strcmp if length 4 >null<
-					if ( vlen == 4 && val[0] == 'n') {
-						if (val && (strcmp(val, "null")) == 0) 
-							rlen += strlen(val)+1;
-					}
-					else 
-							rlen += strlen(val)+3;
-
-					break;
-				}
-				//rlen++;
-			}*/
-			break;
-		}
-		case JSON_OBJECT_TYPE: {
-			//int vtype = lua_type(L, -1);
-			const char *key = lua_tostring(L, -2);
-			_lua_json_elm_key_to_idx(L,key, true);
-			idx = luaL_checkinteger(L, -1);
-			lua_pop(L, 1);
-			elm->key = key;
-			get_json_val_length(L, elm);
-			rlen += lua_tonumber(L, -1);
-			lua_pop(L, 1);
-			break;
-
-			/*switch(vtype) {
-				case LUA_TUSERDATA: {
-					const char *val = lua_pushfstring(L, Json[JsonKey], key);
-					rlen += strlen(val);
-					lua_pop(L, 1);
-
-					json_elm *nested = check_json_elm(L, -1);
-					nested->root = elm;
-					rlen += nested->rlen > 2 ? nested->rlen : 2;
-					break;
-				}
-				case LUA_TNUMBER: {
-					const char *val = lua_pushfstring(L, Json[ObjNumber], key, lua_tonumber(L, -1));
-					rlen += strlen(val)+1;
-					lua_pop(L, 1);
-					break;
-				}
-				case LUA_TBOOLEAN: {
-					const char *val = lua_pushfstring(L, Json[ObjBool], key, btoa(lua_toboolean(L, -1)));
-					rlen += strlen(val)+1;
-					lua_pop(L, 1);
-					break;
-				}
-				case LUA_TSTRING: {
-					size_t vlen = 0;
-					const char *val = lua_tolstring(L, -1, &vlen);
-					
-					// handle null sentinel here
-					// only perform strcmp if length 4 >null<
-					if (( vlen ) == 4 && val[0] == 'n') { 
-						if (strcmp(val, "null") == 0) {
-							//printf("VAL:%s == null\n", val);
-							vtype = LUA_TNULL;
-							val = lua_pushfstring(L, Json[ObjNull], key, lua_tostring(L, -1));
-						}
-					}
-					else 
-							val = lua_pushfstring(L, Json[ObjString], key, lua_tostring(L, -1));
-
-					rlen += strlen(val)+1;
-					lua_pop(L, 1);
-					break;
-				}
-				//rlen++;
-			}
-			break;*/
-		}
-	}
-	//dumpstack(L);
-	lua_getfenv(L, 1);
-	// stack {..., udata, key, val, env}
-	lua_insert(L, 2);
-	lua_settop(L, 4);
-	// stack { udata, env, key, val }
-	//dumpstack(L);
-	if(ktype == LUA_TNUMBER) {
-		idx = luaL_checkinteger(L, -2)+1;
-		lua_pushinteger(L, idx);
-		lua_insert(L, -2);
-		lua_remove(L, -3);
-	}
-	//dumpstack(L);
-	lua_rawset(L, -3); 
-	//idx = elm->type == JSON_ARRAY_TYPE ? (idx + 1) : idx;
-	if(elm && (idx > (int)elm->nelms))
-		elm->nelms++;
-	
-	elm->rlen += rlen;
-	
-
-    return 0;
 };
-
-int lua_json_elm_index(lua_State *L) {
-	//printf("****************************************** INDEX ***************************************************\n");
-	json_elm *elm = check_json_elm(L, 1);
-	// stack { udata, key }
-	const char *key = lua_tostring(L, 2);
-	if(strcmp("env", key) == 0) {
-		lua_getfenv(L, 1);
-		return 1;
-	}
-	else if(strcmp("tojson", key) == 0) {
-			lua_pushcfunction(L, lua_json_elm_tojson);
-		return 1;
-	}
-	else if(strcmp("test", key) == 0) {
-			lua_pushcfunction(L, test_func);
-		return 1;
-	}
-	else if(strcmp("insert", key) == 0) {
-			lua_pushcfunction(L, lua_json_array_insert);
-		return 1;
-	}
-	else if(strcmp("pop", key) == 0) {
-			lua_pushcfunction(L, lua_json_elm_array_pop);
-		return 1;
-	}
-
-
-	// stack { udata, key, env }
-	lua_getfenv(L, 1);
-	lua_insert(L, 2);
-	// stack { udata, env, key }
-
-
-	elm->type == JSON_ARRAY_TYPE ? lua_rawgeti(L, 2, (lua_tointeger(L, 3) + 1)) : lua_rawget(L, 2);
-
-    return 1;
-};
-
-int test_func(lua_State *L) {
-	json_elm *elm = check_json_elm(L, 1);
-	printf("Elm Type: %s Elm Size: %ld\n", elm->typename, elm->nelms);
-
-	return 0;
-}
 
 static const struct luaL_reg lua_json_methods[] = {
-	{ "parse",	    lua_json_elm_parse	    },
-	{ "stringify",	lua_json_elm_tojson	    },
-	{ "__tostring",	lua_json_elm_tostring	},
-    { "__len",		lua_json_elm_len		},
+	{ "parse",	    	lua_json_elm_parse	    },
+	{ "parse_lua",	    lua_json_lua_parse	    },
+	{ "stringify",		lua_json_elm_tojson	    },
+	{ "stringify_lua",	lua_json_lua_stringify	},
+	{ "len",			lua_json_elm_len		},
+	{ "__tostring",		lua_json_elm_tostring	},
+	{ "tojson",			lua_json_elm_tojson		},
+    { "__len",			lua_json_elm_size		},
 	{NULL, NULL}
 };
 
@@ -669,9 +405,12 @@ int luaopen_JSON(lua_State *L){
 	lua_pushvalue(L, -1);	// pushes the metatable
 	lua_setfield(L, -2, "__index");	// metatable.__index = metatable
 	luaL_register(L, LUA_JSON, lua_json_methods);
+	
+	lua_pushliteral(L, null);
+	lua_setglobal(L, "null");
 
     lua_json_open_array(L);
     lua_json_open_object(L);
 
     return 1;
-}
+};

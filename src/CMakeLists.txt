@@ -19,6 +19,7 @@ set(CMAKE_SHARED_LIBRARY_PREFIX "")
 add_library(JSON SHARED lua_json.c
                         lua_json_array.c
                         lua_json_object.c
+                        lua_json_lua.c
                         includes/libjson/json.c
                         includes/libjson/base64.c
                         includes/libjson/lstr.c)

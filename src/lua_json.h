@@ -16,6 +16,121 @@
  *  limitations under the License.
  */
 
+// ####################################################################################### API DOCUMENTATION ################################################################################################### //
+
+/***
+*LuaJson base class
+@module JSON
+* 
+*/
+
+/**
+ * Create a new array.
+ * @function .array
+ * @param arr array name 
+ * @param[opt] ... elements
+ * @return an initialized lua json array.
+ * @usage local a = JSON.array(a, 1,2,3.45,"test",true,null)
+ * print(a[0])  --> 1
+ * print(a[2])  --> 3.45
+ * print(a[#a]) --> null
+ */
+// int lua_json_array_new(lua_State *L, bool parse)
+
+/**
+ * Create a new object.
+ * @function .object
+ * @param obj object name
+ * @param[opt] ... key value pair/s
+ * @return an initialized lua json object
+ * @usage local o = JSON.object(o, "test","obj", "age",99, "root",null)
+ * print(o.test) --> obj
+ * print(o.age)  --> 99
+ * print(o.root) --> null
+ */
+//static int lua_json_object_new (lua_State *L, bool parse)
+
+/**
+ * get a lua json elements. 
+ * @function .tojson
+ * @param elm a valid lua json element.
+ * @return serialized lua json element.
+ *
+ * @usage local ta = JSON.array(ta, 1,2,3.45,true)
+ * ta = JSON.tojson(ta)
+ * print(ta) --> [1,2,3.45,true]
+ */
+//int lua_json_elm_tojson(lua_State *L)
+
+/**
+ * get a lua json elements type and memory address. 
+ * @function .tostring
+ * @param elm a valid lua json element.
+ * @return formatted string containing element type and memory address
+ */
+//int lua_json_elm_tostring(lua_State *L)
+
+/**
+ * get a lua json elements size (alternative to #elm )
+ * @function .size
+ * @param elm a valid lua json element.
+ * @return number of entries in lua json element.
+ */
+//int lua_json_elm_len(lua_State *L)
+
+/**
+ * Serialize a lua json element to json string.
+ * @function .parse
+ * @param elm lua table
+ * @return a valid json element
+ * @usage local a = JSON.parse('[1,2,3.45,true]')
+ * print(a:tojson()) --> [1,2,3.45,true]
+ * print(a[0])  --> 1
+ */
+//int lua_json_elm_tojson(lua_State *L)
+
+/**
+ * Serialize a lua table to json string.
+ * @function .parse_lua
+ * @param table lua table
+ * @return a valid json representation of the table.
+ * @usage local t = {1,2,3.45,"test",true}
+ * print(t) --> table: 0x5c92968f1c90
+ *
+ * local ta = JSON.parse_lua(ta, t)
+ * print(ta) --> array: 0x5c92968f09a8
+ * print(ta[0])  --> 1
+ * print(ta[2])  --> 3.45
+ * print(ta[#ta]) --> true
+ */
+//int lua_json_elm_tojson(lua_State *L)
+
+/**
+ * Serialize lua json element to json string.
+ * @function .stringify
+ * @param elm lua json element
+ * @return a valid json representation of the lua json element.
+ *@usage local a = JSON.parse('[1,2,3.45,true]')
+ * print(a:tojson()) --> [1,2,3.45,true]
+ * local json_a = JSON.stringify(a)
+ * print(json_a) --> [1,2,3.45,"test",true]
+ * 
+ */
+
+/**
+ * Serialize lua json object to json string.
+ * @function .stringify_lua
+ * @param elm lua json element
+ * @return a valid json representation of the lua json element.
+ * @usage local t = {1,2,3.45,"test",true}
+ * print(t) --> table: 0x5c92968f1c90
+ *
+ * local json_a = JSON.stringify_lua(t)
+ * print(json_a) --> [1,2,3.45,"test",true]
+ */
+
+// ####################################################################################### END API DOCUMENTATION ############################################################################################### //
+
 #ifndef LUA_JSON_H
 #define LUA_JSON_H
 
@@ -46,6 +161,7 @@ extern "C" {
 
 #include "lua_json_array.h"
 #include "lua_json_object.h"
+#include "lua_json_lua.h"
 
 #ifdef __cplusplus
 }
@@ -55,6 +171,7 @@ extern "C" {
 #define DEBUG 1
 
 #define btoa(x) ((x) ? "true" : "false")
+#define null "null"
 #define LUA_TNULL (-2)
 
 enum LUA_JSON_TYPES {
@@ -130,14 +247,14 @@ typedef struct json_elm {
     struct json_elm *root;
     struct json_elm *self;
 
-	int vtable;
+	int idx;
     uintptr_t id;
     
 	// analytics
     size_t type;
     size_t nelms;
     size_t rlen;
-	size_t plen;
+	int plen, pmode;
     size_t children;
 
     lua_String *LS;
@@ -161,11 +278,12 @@ void json_type(parse_elm *elm);
 int lua_json_elm_newindex(lua_State *L);
 int lua_json_elm_index(lua_State *L);
 int lua_json_elm_len(lua_State *L);
+int lua_json_elm_size(lua_State *L);
 int lua_json_elm_tostring(lua_State *L);
 int lua_json_elm_tojson(lua_State *L);
 int lua_json_elm_parse(lua_State *L);
 int get_json_val_length(lua_State *L, json_elm *elm);
-int test_func(lua_State *L);
+int lua_json_elm_info(lua_State *L);
 bool check_next(ref *seen, uintptr_t next);
 
 #endif
