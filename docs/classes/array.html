@@ -1,0 +1,503 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Reference</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>LuaJson5.1</h1>
+
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Functions">Functions</a></li>
+<li><a href="#Methods">Methods</a></li>
+</ul>
+
+
+<h2>Classes</h2>
+<ul class="nowrap">
+  <li><strong>array</strong></li>
+  <li><a href="../classes/lua.html">lua</a></li>
+  <li><a href="../classes/object.html">object</a></li>
+</ul>
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/JSON.html">JSON</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+<h1>Class <code>array</code></h1>
+<p>LuaJson array class</p>
+<p></p>
+
+
+<h2><a href="#Functions">Functions</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#JSON:array">JSON:array ([elm[, ...]])</a></td>
+	<td class="summary">Create a new array.</td>
+	</tr>
+</table>
+<h2><a href="#Methods">Methods</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#array:tojson">array:tojson ()</a></td>
+	<td class="summary">render an array as valid json</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#array:insert">array:insert (pos, elm)</a></td>
+	<td class="summary">Inserts an element at position.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#array:del">array:del (pos)</a></td>
+	<td class="summary">Deletes an element at position.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#array:reverse">array:reverse ()</a></td>
+	<td class="summary">reverses the indexes of the elements of an array.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#array:push">array:push (elm)</a></td>
+	<td class="summary">Adds element to the end of an array.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#array:pop">array:pop ()</a></td>
+	<td class="summary">Pops and returns the last element of an array.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#array:shift">array:shift ()</a></td>
+	<td class="summary">Removes element at index 0.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#array:unshift">array:unshift (elm[, ...])</a></td>
+	<td class="summary">adds one or more elements to the beginning of an array.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#array:ref">array:ref ()</a></td>
+	<td class="summary">Creates a new reference to an existing array.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#array:unref">array:unref ()</a></td>
+	<td class="summary">Creates an unreferenced copy of an existing array.</td>
+	</tr>
+</table>
+
+<br/>
+<br/>
+
+
+    <h2 class="section-header "><a name="Functions"></a>Functions</h2>
+    Methods
+    <dl class="function">
+    <dt>
+    <a name = "JSON:array"></a>
+    <strong>JSON:array ([elm[, ...]])</strong>
+    </dt>
+    <dd>
+    Create a new array.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">elm</span>
+         any
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">...</span>
+         next elm/s
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        an initialized lua json array.
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../classes/array.html#array:tojson">array:tojson</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> a = JSON:<span class="function-name">array</span>(<span class="number">1</span>,<span class="number">2</span>,<span class="number">3.45</span>,<span class="string">"test"</span>,<span class="keyword">true</span>,null)
+<span class="global">print</span>(a[<span class="number">0</span>])  <span class="comment">--&gt; 1
+</span><span class="global">print</span>(a[<span class="number">2</span>])  <span class="comment">--&gt; 3.45
+</span><span class="global">print</span>(a[#a]) <span class="comment">--&gt; null</span></pre>
+    </ul>
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="Methods"></a>Methods</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "array:tojson"></a>
+    <strong>array:tojson ()</strong>
+    </dt>
+    <dd>
+    render an array as valid json
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        json string
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../classes/array.html#JSON:array">JSON:array</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [1,2,3.45,"test",true,null]</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "array:insert"></a>
+    <strong>array:insert (pos, elm)</strong>
+    </dt>
+    <dd>
+    Inserts an element at position.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">pos</span>
+         a valid index to insert item.
+        </li>
+        <li><span class="parameter">elm</span>
+         any
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        updated length of array.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> a = JSON:<span class="function-name">array</span>(<span class="number">1</span>,<span class="number">2</span>,<span class="number">3.45</span>,<span class="string">"test"</span>,<span class="keyword">true</span>,null)
+<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [1,2,3.45,"test",true,null]
+</span>a:<span class="function-name">insert</span>(<span class="number">0</span>,<span class="number">0</span>)
+<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [0,1,2,3.45,"test",true,null]</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "array:del"></a>
+    <strong>array:del (pos)</strong>
+    </dt>
+    <dd>
+    Deletes an element at position.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">pos</span>
+         index of item to be removed.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        the updated length of array.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> a = JSON:<span class="function-name">array</span>(<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>,<span class="number">3.45</span>,<span class="string">"test"</span>,<span class="keyword">true</span>,null)
+<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [0,1,2,3.45,"test",true,null]
+</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 30
+</span><span class="global">print</span>(#a) <span class="comment">--&gt; 7
+</span><span class="keyword">local</span> n = a:<span class="function-name">del</span>(<span class="number">4</span>)
+<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [0,1,2,3.45,true,null]
+</span><span class="global">print</span>(n)  <span class="comment">--&gt; 6
+</span><span class="global">print</span>(#a) <span class="comment">--&gt; 6
+</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 23</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "array:reverse"></a>
+    <strong>array:reverse ()</strong>
+    </dt>
+    <dd>
+    reverses the indexes of the elements of an array.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        1 on success, 0 on failure.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> a = JSON:<span class="function-name">array</span>(<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>,<span class="number">3.45</span>,<span class="string">"test"</span>,<span class="keyword">true</span>,null)
+<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt;  [0,1,2,3.45,"test",true,null]
+</span>a:<span class="function-name">reverse</span>()
+<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [null,true,"test",3.45,2,1,0]</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "array:push"></a>
+    <strong>array:push (elm)</strong>
+    </dt>
+    <dd>
+    Adds element to the end of an array.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">elm</span>
+         Any
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        the updated length of array.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> a = JSON:<span class="function-name">array</span>(<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>,<span class="number">3.45</span>,<span class="keyword">true</span>,null)
+<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [0,1,2,3.45,true,null]
+</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 23
+</span><span class="global">print</span>(#a) <span class="comment">--&gt; 6
+</span><span class="keyword">local</span> n = a:<span class="function-name">push</span>(<span class="string">"test"</span>)
+<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [0,1,2,3.45,true,null,"test"]
+</span><span class="global">print</span>(n)  <span class="comment">--&gt; 7
+</span><span class="global">print</span>(#a) <span class="comment">--&gt; 7
+</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 30</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "array:pop"></a>
+    <strong>array:pop ()</strong>
+    </dt>
+    <dd>
+    Pops and returns the last element of an array.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        the popped element or nil if array is empty.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> a = JSON:<span class="function-name">array</span>(<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>,<span class="number">3.45</span>,<span class="keyword">true</span>,null)
+<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [0,1,2,3.45,true,null]
+</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 23
+</span><span class="global">print</span>(#a) <span class="comment">--&gt; 6
+</span><span class="keyword">local</span> n = a:<span class="function-name">pop</span>()
+<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [0,1,2,3.45,true]
+</span><span class="global">print</span>(n)  <span class="comment">--&gt; 5
+</span><span class="global">print</span>(#a) <span class="comment">--&gt; 5
+</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 11</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "array:shift"></a>
+    <strong>array:shift ()</strong>
+    </dt>
+    <dd>
+    Removes element at index 0.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        the removed element or nil if array is empty.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> a = JSON:<span class="function-name">array</span>(<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>,<span class="number">3.45</span>,<span class="keyword">true</span>,null)
+<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [0,1,2,3.45,true,null]
+</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 23
+</span><span class="global">print</span>(#a) <span class="comment">--&gt; 6
+</span><span class="keyword">local</span> n = a:<span class="function-name">shift</span>()
+<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [1,2,3.45,true,null]
+</span><span class="global">print</span>(n)  <span class="comment">--&gt; 0
+</span><span class="global">print</span>(#a) <span class="comment">--&gt; 5
+</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 21</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "array:unshift"></a>
+    <strong>array:unshift (elm[, ...])</strong>
+    </dt>
+    <dd>
+    adds one or more elements to the beginning of an array.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">elm</span>
+         Any
+        </li>
+        <li><span class="parameter">...</span>
+          Any
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        the updated length of the array.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> a = JSON:<span class="function-name">array</span>(<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>,<span class="number">3.45</span>,<span class="keyword">true</span>,null)
+<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [0,1,2,3.45,true,null]
+</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 23
+</span><span class="global">print</span>(#a) <span class="comment">--&gt; 6
+</span><span class="keyword">local</span> n = a:<span class="function-name">unshift</span>(<span class="number">9</span>,<span class="number">8</span>,<span class="number">7</span>)
+<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [9,8,7,0,1,2,3.45,true,null]
+</span><span class="global">print</span>(n)  <span class="comment">--&gt; 9
+</span><span class="global">print</span>(#a) <span class="comment">--&gt; 9
+</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 29</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "array:ref"></a>
+    <strong>array:ref ()</strong>
+    </dt>
+    <dd>
+    Creates a new reference to an existing array.  (pass by reference)
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        reference to array.
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <li><a href="../modules/JSON.html#.array">JSON.array</a></li>
+         <li><a href="../classes/array.html#array:unref">array:unref</a></li>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> a_ref = a:<span class="function-name">ref</span>()
+<span class="global">print</span>(a_ref[<span class="number">0</span>]) <span class="comment">--&gt; 1
+</span><span class="global">print</span>(a_ref[#a_ref - <span class="number">1</span>]) <span class="comment">--&gt; true
+</span>a_ref[<span class="number">0</span>] = <span class="number">20</span>
+<span class="global">print</span>(a_ref[<span class="number">0</span>], a[<span class="number">0</span>]) <span class="comment">--&gt; 20    20</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "array:unref"></a>
+    <strong>array:unref ()</strong>
+    </dt>
+    <dd>
+    Creates an unreferenced copy of an existing array.  (pass by value)
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        unreference an array. (create a seperate copy)
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <li><a href="../modules/JSON.html#.array">JSON.array</a></li>
+         <li><a href="../classes/array.html#array:ref">array:ref</a></li>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> a_copy = a:<span class="function-name">unref</span>()
+<span class="global">print</span>(a_copy[<span class="number">0</span>]) <span class="comment">--&gt; 1
+</span>a_copy[<span class="number">0</span>] = <span class="number">20</span>
+<span class="global">print</span>(a_copy[<span class="number">0</span>], a[<span class="number">0</span>]) <span class="comment">--&gt; 20    1</span></pre>
+    </ul>
+
+</dd>
+</dl>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2026-02-07 08:45:50 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>
