@@ -59,17 +59,17 @@ int __lua_json_render_lua_object(lua_State *L, struct ref *seen) {
         lua_pushnil(L);
         while(lua_next(L, -2) != 0) { 
             // omit object lookup table at index 0
-            if(lua_isnumber(L, -2)) { 
+            if(lua_isnumber(L, -2) && lua_tonumber(L, -1) == 0) { 
                 lua_pop(L, 1);
                 continue;
             }
             key = lua_tostring(L, -2);
 
-            if(idx >= 1) strcat(seen->b, Json[JsonNext]);
+            if(idx >= 1) strcat(seen->b, Json[Next]);
             int type = lua_type(L, -1); 
             switch(type) {
                 case LUA_TTABLE: {
-                    v = lua_pushfstring(L, Json[JsonKey], key);
+                    v = lua_pushfstring(L, Json[ObjKey], key);
                     strcat(seen->b, v);
                     lua_pop(L, 1);
                     v = NULL;
@@ -181,7 +181,7 @@ int __lua_json_render_lua_array(lua_State *L, struct ref *seen) {
                 strcat(seen->b, v);
                 lua_pop(L, 2);
             }
-            if(len - a >= 1) strcat(seen->b, Json[JsonNext]);
+            if(len - a >= 1) strcat(seen->b, Json[Next]);
         }
         strcat(seen->b, Json[CloseArr]);
 		
@@ -194,30 +194,190 @@ int __lua_json_render_lua_array(lua_State *L, struct ref *seen) {
 	return 0;
 };
 
-int lua_json_lua_tojson(lua_State *L, bool parse) {
-    size_t size = lua_objlen(L, -1);
-    int type = size > 0 ? JSON_ARRAY_TYPE : JSON_OBJECT_TYPE;
+/*int __lua_json_render_lua_array(lua_State *L, struct ref *seen) {
+   printf("*********************************** RENDER LUA ARRAY *********************************** \n");
+   dumpstack(L);
+	if(lua_istable(L, -1)) {
+		int len = lua_objlen(L, -1);
+		strcat(seen->b, Json[OpenArr]);
+        dumpstack(L);
+        for(int a = 1; a <= (int)len; a++) {
+            if(lua_istable(L, -1))
+                    lua_rawgeti(L, -1, a);
 
+            int type = lua_type(L, -1);
+            const char *v = NULL;
+            switch(type) {
+                case LUA_TTABLE : {
+                        lua_objlen(L, -1) > 0 ? __lua_json_render_lua_array(L, seen) : __lua_json_render_lua_object(L, seen);
+                        lua_pop(L, 1);
+                        v = NULL;
+                        break;
+                }
+                case LUA_TSTRING: {
+                        const char *val = lua_tostring(L, -1);
+                        size_t vlen = strlen(val);
+                        int vtype = LUA_TSTRING;
+                        
+                        // handle null sentinel here
+                        if (( vlen ) == 4 && val[0] == 'n')
+                        { // only perform strcmp if length 4 >null<
+                            if (val && (strcmp(val, "null")) == 0) {
+                                //printf("NULL: %s\n", val);
+                                vtype = LUA_TNULL;
+                            }
+                        }
+
+                        v = vtype != LUA_TNULL ? lua_pushfstring(L, Json[ArrString], lua_tostring(L, -1)) : lua_pushfstring(L, Json[ArrNull], lua_tostring(L, -1)) ;
+                        break;
+                    
+                }
+                case LUA_TNUMBER: {
+                    if(!lua_istable(L, -1))
+                        v = lua_pushfstring(L, Json[ArrNumber], lua_tonumber(L, -1));
+                    break;
+                }
+                case LUA_TBOOLEAN: {
+                    if(!lua_istable(L, -1))
+                        v = lua_pushfstring(L, Json[ArrBool],  btoa(lua_toboolean(L, -1)));
+                    break;
+                }
+                case LUA_TNULL: {
+                    if(!lua_istable(L, -1))
+                        v = lua_pushfstring(L, Json[ArrNull],  lua_tostring(L, -1));
+                    break;
+                }
+            }
+            if(v) {
+                strcat(seen->b, v);
+                lua_pop(L, 2);
+            }
+            if(len - a >= 1) strcat(seen->b, Json[Next]);
+        }
+        strcat(seen->b, Json[CloseArr]);
+		
+	}
+	// all done !!
+	if(lua_gettop(L) == 1)
+		return 1;
+
+	// recursion
+	return 0;
+};*/
+
+/*
+1. get tbl length and type
+2. if mixed set nest or key mode
+3. 
+*/
+
+int lua_json_lua_tojson(lua_State *L, bool parse) {
+	size_t size = lua_objlen(L, -1);
+	lua_json_lua_table_len(L); 
+	size_t tlen = lua_tonumber(L, -1);
+	int ktype = lua_tointeger(L, -2);
+	lua_pop(L, 2);
+	int type = size > 0 ? JSON_ARRAY_TYPE : JSON_OBJECT_TYPE;
 	ref seen = {0};
 	seen.root = (uintptr_t)lua_topointer(L, -1);
-	seen.ids[seen.elms++] = seen.root;
+	seen.last = seen.root;
 	seen.check_next = &check_next;
 
 	seen.ltype = LUA_TUSERDATA;
 	seen.b = malloc(MAX_LUA_SIZE+1); // 1MB by default (adjust in "lua_json_lua.h" to suite your needs)
 	memset(seen.b, 0, MAX_LUA_SIZE);
-	
+
 	type == JSON_ARRAY_TYPE ? __lua_json_render_lua_array(L, &seen) : __lua_json_render_lua_object(L, &seen);
-    type == JSON_ARRAY_TYPE ? lua_pop(L, 2) : lua_pop(L, 3);
+	type == JSON_ARRAY_TYPE ? lua_pop(L, 2) : lua_pop(L, 3);
 	lua_pushstring(L, seen.b);
 	free(seen.b);
-    dumpstack(L);
-    if(lua_isnil(L, 1)) lua_remove(L, 1);
-    if(parse) lua_json_elm_parse(L);
+	//dumpstack(L);
 
-	return 1;
+	if(lua_isnil(L, 1)) lua_remove(L, 1);
+	if(parse) lua_json_elm_parse(L);
+
+		return 1;
 };
 
+int lua_json_lua_table_len(lua_State *L) {
+	int keys = 0, idxs = 0, ktype = 0;
+	size_t size = 0;
+	if (lua_istable(L, -1)) {
+		lua_pushvalue(L, -1);
+		lua_pushnil(L);
+
+		while (lua_next(L, -2) != 0 && !lua_isnil(L, -2)) {
+			ktype = lua_type(L, -2);
+			ktype == LUA_TSTRING ? keys++ : ktype == LUA_TNUMBER ? idxs++ : ktype; 
+			lua_pop(L, 1);
+			size++;
+		}
+
+		lua_remove(L, 1);
+		dumpstack(L);
+	}
+	ktype = keys == 0 ? JSON_ARRAY_TYPE :  idxs == 0 ? JSON_OBJECT_TYPE : keys > idxs ? JSON_NESTED_OBJECT_TYPE : JSON_NESTED_ARRAY_TYPE; 
+	printf("Table Type: [ %s ] Table Length: [ %ld ]\n", ktype == 5 ? "object" : ktype == 4 ? "array" : ktype == 7 ? "object (mixed)" : "array (mixed)",  size);
+	lua_pushinteger(L, ktype);
+	lua_pushnumber(L, size);
+
+	return 2;
+}
+
+int lua_json_lua_is_mixed(lua_State *L) {
+	int ktype = 0, last = 0, idx = 0;
+	if(lua_istable(L, -1)) {
+		size_t len = lua_objlen(L, -1);
+		lua_pushvalue(L, -1);
+		lua_pushnil(L);
+
+		while (lua_next(L, -2) != 0) {
+			if (lua_isnil(L, -2))
+				break;
+			else
+				ktype = lua_type(L, -2);
+
+			if((idx > 0 && ktype != last) || (len > 0 && ktype == LUA_TSTRING)) {
+				printf("Table Type: [ %s ]\n", "mixed");
+				lua_pop(L, 3);
+				lua_pushboolean(L, true);
+				return 1;
+			}
+	
+			lua_pop(L, 1);
+			last = ktype;
+			idx++;
+		}
+
+		lua_pop(L, 2);
+	}
+	printf("Table Type: [ %s ]\n", last == LUA_TSTRING ? "object" : "array");
+	lua_pushboolean(L, false);
+
+	return 1;
+}
+
+// c side entry
+static size_t __lua_json_lua_table_len(lua_State *L, int tbl_pos) {
+	size_t len = 0;
+	if(tbl_pos != -1) lua_pushvalue(L, tbl_pos);
+		if(lua_istable(L, -1))
+			len = __lua_json_lua_table_len(L, -1);
+
+	return len;
+}
+
+// c side entry
+static size_t __lua_json_lua_table_type(lua_State *L, int tbl_pos) {
+	int type = 0;
+	if(tbl_pos != -1) lua_pushvalue(L, tbl_pos);
+		if(lua_istable(L, -1))
+			type = __lua_json_lua_table_type(L, -1);
+
+	return type;
+}
+
+// omit element propertys during conversion
 bool lua_json_lua_is_prop(const char *key) {
     if(strcmp(key, "ctx") == 0) 
         return true;
@@ -231,12 +391,13 @@ bool lua_json_lua_is_prop(const char *key) {
         return false;
 }
 
+// convert a lua json element to a regular lua table
 static int _lua_json_tolua(lua_State *L, bool unref) {
     json_elm *elm = check_json_elm(L, 1);
     lua_getfenv(L, 1);
     // just pass reference to env table
     if(!unref) return 1;
-    // create a copy of the element first to unref env table
+    // create a copy of the element and unref env table
     lua_json_lua_tojson(L, true);
     // return its env table 
     lua_getfenv(L, -1);

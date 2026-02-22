@@ -19,7 +19,6 @@
 
  /**
 *LuaJson lua class
-@classmod lua
 */
 
 /**
@@ -98,5 +97,7 @@ int lua_json_lua_stringify(lua_State *L);
 int __lua_json_render_lua_object(lua_State *L, struct ref *seen);
 int __lua_json_render_lua_array(lua_State *L, struct ref *seen);
 int lua_json_tolua(lua_State *L);
+int lua_json_lua_table_len(lua_State *L);
+int lua_json_lua_is_mixed(lua_State *L);
 
 #endif

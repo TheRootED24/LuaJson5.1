@@ -18,25 +18,11 @@
  // ####################################################################################### API DOCUMENTATION ################################################################################################### //
 
  /**
-*LuaJson array class
+*JSON.array Class
 @classmod array
 */
 
 /**
- * Create a new array.
- * @function JSON:array
- * @param[opt] elm any
- * @param[opt] ... next elm/s
- * @return an initialized lua json array.
- * @see array:tojson
- * @usage local a = JSON:array(1,2,3.45,"test",true,null)
- * print(a[0])  --> 1
- * print(a[2])  --> 3.45
- * print(a[#a]) --> null
- */
-// int lua_json_array_new(lua_State *L, bool parse);
-
- /**
  * render an array as valid json
  * @function array:tojson
  * @return json string 
@@ -216,6 +202,7 @@ extern "C" {
 
 typedef struct ref ref;
 typedef struct json_elm json_elm;
+extern const char *marshal_json[], *marshal_lua[], *fields[];
 
 void lua_json_open_array(lua_State *L);
 //int lua_json_array_newindex(lua_State *L);
