@@ -24,8 +24,6 @@ add_library(JSON SHARED lua_json.c
                         lua_json_elm_event.c)   
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fpic")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -s")
-target_link_libraries(JSON libluajit-5.1.so)
 target_link_libraries(JSON mongoose)
-#target_link_libraries(JSON m)
 
 install(TARGETS JSON DESTINATION /usr/lib/lua/LuaJson/)
