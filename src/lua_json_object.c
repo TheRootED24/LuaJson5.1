@@ -137,8 +137,7 @@ lua_json_object_tojson(lua_State *L) {
 	elm->escape = lua_isboolean(L, 2) ? lua_toboolean(L, 2) : false;
 	elm->mode = MARSHAL_JSON;
 	lua_settop(L, 1);
-	
-	//elm->tojson(L);
+
 	elm->stringify(L);
 	return 1;
 };
@@ -150,12 +149,9 @@ lua_json_object_tolua(lua_State *L) {
 	elm->mode = MARSHAL_LUA;
 	lua_settop(L, 1);
 
-	//elm->tojson(L);
 	elm->stringify(L);
-	lua_getfenv(L, 1);
-	lua_insert(L, -2);
-	
-	return 2;
+
+	return 1;
 };
 
 static int
