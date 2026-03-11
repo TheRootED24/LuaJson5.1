@@ -1,0 +1,1 @@
+/usr/bin/cc -fPIC  -fpic -s -shared -Wl,-soname,JSON.so -o JSON.so CMakeFiles/JSON.dir/lua_json.c.o CMakeFiles/JSON.dir/lua_json_lua.c.o CMakeFiles/JSON.dir/lua_json_array.c.o CMakeFiles/JSON.dir/lua_json_object.c.o CMakeFiles/JSON.dir/lua_json_marshal.c.o CMakeFiles/JSON.dir/lua_json_elm_event.c.o  -lluajit-5.1 -lmongoose 
