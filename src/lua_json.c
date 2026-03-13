@@ -1,5 +1,5 @@
 #include "lua_json.h"
-//#define DUMPSTACK 1
+#define DUMPSTACK 1
 
 #ifdef DUMPSTACK
 static void dumpstack(lua_State *L, const char *msg)
@@ -221,24 +221,19 @@ lua_json_elm_get_rlen(lua_State *L) {
 	return 1;
 }
 
-int
-lua_json_elm_env_get(lua_State *L, json_elm *elm , int idx, env_field field) {
-	lua_rawgeti(L, LUA_REGISTRYINDEX, elm->vtable);
-	if(DEBUG) printf("---------------------------------------------------->>> field[%s]\n", fields[field]);
-	lua_getfield(L, -1, fields[field]);
-	size_t size = lua_objlen(L, -1);
-	if(idx > (int)size) {
-		fprintf(stderr, "Index [%d] is out of bounds !!", idx);
-		lua_pop(L, 2);
+int lua_json_elm_env_get(lua_State *L, json_elm *elm , int idx, env_field field) {
+    lua_rawgeti(L, LUA_REGISTRYINDEX, elm->vtable);
+    lua_getfield(L, -1, fields[field]);
+    
+    // ... bounds check ...
 
-		return 0; 
-	}
-
-	lua_rawgeti(L, -1, idx);
-	//lua_insert(L, 2);
-	//lua_pop(L, (lua_gettop(L)-2));
-	//dumpstack(L);
-	return 1;
+    lua_rawgeti(L, -1, idx); // Target at -1
+    
+    // THE FIX: Move the target to the position of the vtable and pop the rest
+    lua_replace(L, -3); // Puts Result where VTable was
+    lua_pop(L, 1);      // Pops the Field Table
+    
+    return 1; // Now only the Result is left on the stack above the inputs
 }
 
 int
@@ -381,6 +376,55 @@ lua_json_elm_env_rem(lua_State *L, json_elm *elm, int idx, env_field field) {
 	return 0;
 };
 
+static int l_strip_all(lua_State *L) {
+    size_t len;
+    const char *s = luaL_checklstring(L, -1, &len);
+    dumpstack(L, "l_strip_all");
+    // Create a temporary buffer on the C stack (or use luaL_Buffer)
+    luaL_Buffer b;
+    luaL_buffinit(L, &b);
+
+    for (size_t i = 0; i < len; i++) {
+        if (!isspace((unsigned char)s[i])) {
+            luaL_addchar(&b, s[i]);
+        }
+    }
+	lua_pop(L, 1);
+
+    luaL_pushresult(&b);
+	dumpstack(L, "l_strip_all");
+    return 1;
+}
+
+char* trim_const_char(const char *s) {
+    if (s == NULL) return NULL;
+
+    const char *start = s;
+    const char *end = s + strlen(s) - 1;
+
+    // Move start pointer forward past whitespace
+    while (*start && isspace((unsigned char)*start)) {
+        start++;
+    }
+
+    // Move end pointer backward past whitespace
+    while (end > start && isspace((unsigned char)*end)) {
+        end--;
+    }
+
+    // Calculate length of the trimmed string
+    size_t len = (start <= end) ? (size_t)(end - start + 1) : 0;
+
+    // Allocate memory for the new string (+1 for null terminator)
+    char *trimmed = (char *)malloc(len + 1);
+    if (trimmed) {
+        memcpy(trimmed, start, len);
+        trimmed[len] = '\0';
+    }
+
+    return trimmed;
+}
+
 int
 lua_json_elm_stringify(lua_State *L) {
 	json_elm *elm = check_json_elm(L, 1);
@@ -404,7 +448,7 @@ lua_json_elm_stringify(lua_State *L) {
 
 	size_t lt = strlen(seen.b)+1; // null term
 	seen.b[lt]='\0';
-	//elm->rlen = lt;
+	elm->rlen = lt;
 	lua_pushstring(L, seen.b);
 	free(seen.b);
 	free(seen.marshal);
@@ -469,7 +513,7 @@ json_type(parse_elm *elm) {
 		elm->type = JSON_ARRAY_TYPE;
 		return;
 	}
-	
+	printf("--------------------------------------------------------->>>>>>>>>>>>>>>>>>>.. ELM KEY: %s\n", elm->key);
 	bool isLong = ((elm->l = mg_json_get_long(*elm->json, elm->key, -1)) == -1) ? false : true;
 	bool isStr = ((elm->str = mg_json_get_str(*elm->json, elm->key)) == NULL) ? false : true;
 	bool isNum = mg_json_get_num(*elm->json, elm->key, &elm->num);
@@ -509,7 +553,8 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 			elm.index = val.buf[0];
 			
 			if (isKeyed) { 
-				lua_pushlstring(L, key.buf + 1, key.len - 2);
+				//lua_pushlstring(L, key.buf + 1, key.len - 2);
+				key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
 				elm.key = lua_pushfstring(L, "$.%s", lua_tostring(L, -1));
 				lua_pop(L, 2);
 
@@ -531,7 +576,8 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 			switch (elm.type) {
 				case JSON_NUMBER_TYPE: {
 					if (isKeyed) {
-						lua_pushlstring(L, key.buf + 1, key.len - 2);
+						//lua_pushlstring(L, key.buf + 1, key.len - 2);
+						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
 						lua_pushnumber(L, elm.num);
 					}
 					else {
@@ -546,7 +592,8 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 				}
 				case JSON_BOOL_TYPE: {
 					if (isKeyed) {
-						lua_pushlstring(L, key.buf + 1, key.len - 2);
+						//lua_pushlstring(L, key.buf + 1, key.len - 2);
+						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
 						lua_pushboolean(L, elm.b);
 					}
 					else {
@@ -561,7 +608,8 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 				}
 				case JSON_LONG_TYPE: {
 					if (isKeyed) {
-						lua_pushlstring(L, key.buf + 1, key.len - 2);
+						//lua_pushlstring(L, key.buf + 1, key.len - 2);
+						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
 						lua_pushnumber(L, elm.l);
 					}
 					else {
@@ -576,7 +624,8 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 				}
 				case JSON_STRING_TYPE: {
 					if (isKeyed) {
-						lua_pushlstring(L, key.buf + 1, key.len - 2);
+						//lua_pushlstring(L, key.buf + 1, key.len - 2);
+						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
 						lua_pushstring(L, elm.str);
 					}
 					else {
@@ -584,15 +633,16 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 						lua_pushstring(L, elm.str);
 					}
 					free(elm.str);
-					//printf("JSON STRING\n");
-					//dumpstack(L);
+					printf("JSON STRING\n");
+					dumpstack(L, "string");
 					//jelm->strings++;
 					lua_settable(L, -3);
 					break;
 				}
 				case JSON_NULL_TYPE: {
 					if (isKeyed) {
-						lua_pushlstring(L, key.buf + 1, key.len - 2);
+						//lua_pushlstring(L, key.buf + 1, key.len - 2);
+						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
 						lua_pushlstring(L, val.buf, val.len);
 					}
 					else {
@@ -607,15 +657,23 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 				}
 				case JSON_ARRAY_TYPE: {
 					//printf("NEW OBJECT !!!!!!!!!!!!!!!!\n");
-					isKeyed ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushnumber(L, idx++);
-					lua_json_elm_parse_array(L);
+					if (isKeyed){
+						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
+						lua_json_elm_parse_array(L);
+					}
+					else {
+						lua_pushnumber(L, idx++);
+						lua_json_elm_parse_array(L);
+					}
+					//isKeyed ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushnumber(L, idx++);
+					//lua_json_elm_parse_array(L);
 					//jelm->arrays++;
 					break;
 				}
 				case JSON_OBJECT_TYPE: {
-					//printf("NEW OBJECT !!!!!!!!!!!!!!!!\n");
+					printf("NEW OBJECT !!!!!!!!!!!!!!!!\n");
 					if (isKeyed){
-						lua_pushlstring(L, key.buf + 1, key.len - 2);
+						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
 						lua_json_elm_parse_object(L);
 					}
 					else {
@@ -667,9 +725,12 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 
 int
 lua_json_elm_parse(lua_State *L) {
-	const char *elm = luaL_checkstring(L, -1);
-	lua_pop(L, 1);
-	//printf("JSON: %s\n", elm);
+	dumpstack(L, "parse");
+	const char *e = luaL_checkstring(L, -1);
+	const char *elm = trim_const_char(e);
+	lua_pop(L, lua_gettop(L));
+	printf("JSON: %s [0]: %c\n", elm, elm[0]);
+	dumpstack(L, "parse");
 	if(elm[0] == '{') 
 		lua_json_elm_parse_object(L);
 	else if(elm[0] == '[')
@@ -681,7 +742,7 @@ lua_json_elm_parse(lua_State *L) {
 
 	struct mg_str json = mg_str(elm); 
 	__lua_json_elm_parse(L, json, -1);
-
+dumpstack(L, "parse end");
 	//json_elm *jelm = check_json_elm(L, 1);
 
 	//printf("PARSED ELM TYPE: %s\nPARSED LENGTH: %ld\n", jelm->typename, jelm->rlen);
@@ -728,16 +789,17 @@ void alloc_events(json_elm *elm) {
 }
 
 static const struct luaL_reg lua_json_methods[] = {
-	{ "parse",	    	lua_json_elm_parse	},
-	{ "parse_lua",	    lua_json_lua_parse	},
+	{ "parse",	    	lua_json_elm_parse		},
+	{ "parse_lua",	    lua_json_lua_parse		},
 	{ "stringify",		lua_json_elm_stringify	},
 	{ "stringify_lua",	lua_json_lua_stringify	},
-	{ "len",			lua_json_elm_len	},
+	{ "strip",			l_strip_all				},
+	{ "len",			lua_json_elm_len		},
 	{ "table_len",		lua_json_lua_table_len	},
 	{ "table_type",		lua_json_lua_is_mixed	},
 	{ "__tostring",		lua_json_elm_tostring	},
 	//{ "tojson",		lua_json_elm_tojson	},
-    	{ "__len",		lua_json_elm_size	},
+    { "__len",		lua_json_elm_size			},
 	{NULL, NULL}
 };
 

@@ -158,6 +158,7 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <errno.h>
 // includes
 #include "includes/mongoose/json.h"
@@ -175,12 +176,26 @@ extern "C" {
 }
 #endif
 
+#if LUA_VERSION_NUM >= 504
+    /* Lua 5.4 uses indexed uservalues (slot 1 is the legacy fenv equivalent) */
+    #define get_json_table(L, i)  lua_getiuservalue(L, i, 1)
+    #define set_json_table(L, i)  lua_setiuservalue(L, i, 1)
+#elif LUA_VERSION_NUM >= 502
+    /* Lua 5.2 and 5.3 */
+    #define get_json_table(L, i)  lua_getuservalue(L, i)
+    #define set_json_table(L, i)  lua_setuservalue(L, i)
+#else
+    /* Lua 5.1 Original */
+    #define get_json_table(L, i)  lua_getfenv(L, i)
+    #define set_json_table(L, i)  lua_setfenv(L, i)
+#endif
+
 extern const char *marshal_json[], *marshal_lua[];
 //typedef void (*NotifyFn)(void* context, size_t value);
 typedef struct event event;
 typedef void (*NotifyFn)(void* context, event *ev);
 // GLOBAL DEFINES
-#define DEBUG 0
+#define DEBUG 2
 //#define USE_THREADS
 
 // --- Disable Threading Support ---
