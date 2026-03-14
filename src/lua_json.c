@@ -329,7 +329,7 @@ int lua_json_elm_get_val_length(lua_State *L, json_elm *elm) {
 			elm->val = lua_tolstring(L, -1, &elm->vlen);
 			// handle null sentinel here
 			if (elm->vlen == 4 && strcmp(elm->val, "null") == 0) {
-				elm->vtype = LUA_TNULL;
+				//elm->vtype = LUA_TNULL;
 				rlen += obj ? (elm->klen + elm->vlen + 4) : (elm->vlen + 1);
 			}
 			else 

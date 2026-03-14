@@ -777,7 +777,7 @@ static int lua_json_array_new(lua_State *L, bool parse) {
 	elm->stringify		= &lua_json_elm_stringify;
 	elm->parse 			= &lua_json_elm_parse;
 	elm->render 		= &lua_json_render_array;
-	elm->rlen 		= 2;
+	elm->rlen 			= 2;
 
 	lua_newtable(L);
 	lua_newtable(L);

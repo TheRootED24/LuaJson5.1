@@ -100,7 +100,7 @@ assert_equal(obj:tojson(), '{"value":42}', "Object key deletion")
 
 -- Test 19: Mixed types
 local mixed = JSON:array(1, "string", true, "null", JSON:object("nested", "value"))
---assert_equal(mixed:tojson(), '[1,"string",true,null,{"nested":"value"}]', "Mixed types")
+assert_equal(mixed:tojson(), '[1,"string",true,null,{"nested":"value"}]', "Mixed types")
 
 -- Test 20: Large array performance
 local large_arr = JSON:array()
