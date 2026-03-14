@@ -19,7 +19,7 @@
 #include "lua_json_object.h"
 extern const char *marshal_json[], *marshal_lua[];
 
-#define DUMPSTACK 1
+//#define DUMPSTACK 1
 
 #ifdef DUMPSTACK
 static void dumpstack(lua_State *L, const char *msg)
@@ -498,25 +498,18 @@ lua_json_object_newindex(lua_State *L)
 	
 	if (vtype == LUA_TNIL)  {
 		elm->rlen -= elm->nelms > 1 ?  0 : -1;
-		printf("idx: %d\n", elm->idx);
 		lua_json_object_del_key(L);
-		printf("idx: %d\n", elm->idx);
 		event ev = {0};
 		ev.type = ON_CHANGE;
-		printf("Rlen: %ld\n", elm->rlen);
 		lua_json_elm_update_len(elm, &nl);
-		printf("Rlen: %ld\n", elm->rlen);
+
 		ev.data = &nl;
 		elm->event->set(elm->event->on_change, &ev);
 		if(elm && elm->nested){
 			if(DEBUG) printf("Un Sub Oject New Index ..\nelm: %ld\nnested: %ld\n", elm->id, elm->nested->id);
-			dumpstack(L, "obj inindex 2");
 			lua_json_elm_unsub(elm, elm->nested);
-			dumpstack(L, "obj inindex 2");
 		}
 		elm->nelms--;
-		dumpstack(L, "ni end");
-		//return 0;
 		
 	}
 	
@@ -527,7 +520,6 @@ lua_json_object_newindex(lua_State *L)
 	// stack { udata, env, key, val }
 	lua_settop(L, 4);
 	// stack { udata, env, key, val }
-	dumpstack(L, "obj inindex 3");
 	lua_rawset(L, -3); 
 
 	if(vtype != LUA_TNIL && (elm->idx > (int)elm->nelms)) {
@@ -539,11 +531,8 @@ lua_json_object_newindex(lua_State *L)
 		elm->nelms++;
 	}
 	
-	//elm->key = "nil";
-	//elm->idx = 1;
 	lua_pop(L, 1);
-	dumpstack(L, "obj inindex 3");
-	lua_pop(L, 1);
+
     return 0;
 };
 
@@ -716,8 +705,6 @@ lua_json_object_gc(lua_State *L) {
 
 	return 0;
 }
-
-
 
 static int
 lua_json_object_new(lua_State *L, bool parse)

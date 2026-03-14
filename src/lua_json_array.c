@@ -20,7 +20,7 @@
 extern const char *marshal_json[], *marshal_lua[];
 
 
-#define DUMPSTACK 1
+//#define DUMPSTACK 1
 
 #ifdef DUMPSTACK
 static void dumpstack(lua_State *L, const char *msg)
@@ -332,7 +332,6 @@ static int _lua_json_elm_array_unshift(lua_State *L) {
 	// stack { elm, pos, val }
 	lua_pushboolean(L, true);
 	lua_json_array_insert(L);
-	dumpstack(L, "unshift");
 	lua_pop(L, 1);
 	// stack { elm }
 	event ev = {0};

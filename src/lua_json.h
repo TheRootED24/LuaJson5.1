@@ -195,7 +195,7 @@ extern const char *marshal_json[], *marshal_lua[];
 typedef struct event event;
 typedef void (*NotifyFn)(void* context, event *ev);
 // GLOBAL DEFINES
-#define DEBUG 2
+#define DEBUG 0
 //#define USE_THREADS
 
 // --- Disable Threading Support ---

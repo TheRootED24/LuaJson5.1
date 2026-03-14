@@ -279,8 +279,8 @@ int __lua_json_render_lua_array(lua_State *L, struct ref *seen) {
 int lua_json_lua_tojson(lua_State *L, bool parse) {
 	size_t size = lua_objlen(L, -1);
 	lua_json_lua_table_len(L); 
-	size_t tlen = lua_tonumber(L, -1);
-	int ktype = lua_tointeger(L, -2);
+	//size_t tlen = lua_tonumber(L, -1);
+	//int ktype = lua_tointeger(L, -2);
 	lua_pop(L, 2);
 	int type = size > 0 ? JSON_ARRAY_TYPE : JSON_OBJECT_TYPE;
 	ref seen = {0};
@@ -362,26 +362,6 @@ int lua_json_lua_is_mixed(lua_State *L) {
 	return 1;
 }
 
-// c side entry
-static size_t __lua_json_lua_table_len(lua_State *L, int tbl_pos) {
-	size_t len = 0;
-	if(tbl_pos != -1) lua_pushvalue(L, tbl_pos);
-		if(lua_istable(L, -1))
-			len = __lua_json_lua_table_len(L, -1);
-
-	return len;
-}
-
-// c side entry
-static size_t __lua_json_lua_table_type(lua_State *L, int tbl_pos) {
-	int type = 0;
-	if(tbl_pos != -1) lua_pushvalue(L, tbl_pos);
-		if(lua_istable(L, -1))
-			type = __lua_json_lua_table_type(L, -1);
-
-	return type;
-}
-
 // omit element propertys during conversion
 bool lua_json_lua_is_prop(const char *key) {
     if(strcmp(key, "ctx") == 0) 
@@ -398,7 +378,7 @@ bool lua_json_lua_is_prop(const char *key) {
 
 // convert a lua json element to a regular lua table
 static int _lua_json_tolua(lua_State *L, bool unref) {
-    json_elm *elm = check_json_elm(L, 1);
+   // json_elm *elm = check_json_elm(L, 1);
     lua_getfenv(L, 1);
     // just pass reference to env table
     if(!unref) return 1;
@@ -406,11 +386,6 @@ static int _lua_json_tolua(lua_State *L, bool unref) {
     lua_json_lua_tojson(L, true);
     // return its env table 
     lua_getfenv(L, -1);
-    if(elm->type == JSON_OBJECT_TYPE) {
-        // remove the keys lookup table
-        lua_pushnil(L);
-        lua_rawseti(L, -2, 0);
-    }
 
     return 1;
 }
