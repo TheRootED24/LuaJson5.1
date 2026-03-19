@@ -38,8 +38,6 @@ void subject_unsubscribe(Subject* s, void* context, NotifyFn callback) {
 
 void subject_set_values(Subject* s, event *ev) {
     LOCK(s);
-    
-
     ObserverNode* curr = s->observers;
     while (curr) {
         curr->callback(curr->context, ev);
@@ -48,13 +46,13 @@ void subject_set_values(Subject* s, event *ev) {
     UNLOCK(s);
 }
 
-void subject_set_values2(Subject* s, event* ev) {
+void print_subscribers(Subject* s) {
     LOCK(s);
-    
     ObserverNode* curr = s->observers;
     while (curr) {
-        curr->callback(curr->context, ev );
-        curr = curr->next;
+        ObserverNode* next = curr->next;
+        
+        curr = next;
     }
     UNLOCK(s);
 }
@@ -68,6 +66,7 @@ void subject_cleanup(Subject* s) {
         curr = next;
     }
     s->observers = NULL;
+
     free(s->event);
     UNLOCK(s);
     DESTROY_LOCK(s);

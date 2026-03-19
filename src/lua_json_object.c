@@ -276,7 +276,7 @@ static int
 lua_json_render_object(lua_State *L, struct ref *seen) 
 {
 	json_elm *elm = check_json_elm(L, -1);
-	seen->elm = elm;
+	//seen->elm = elm;
 	get_json_table(L, -1);
 
 	seen->marshal->obj_open(seen);
@@ -291,14 +291,15 @@ lua_json_render_object(lua_State *L, struct ref *seen)
 		switch(lua_type(L, -1)) {
 			case LUA_TUSERDATA: {
 
-				uintptr_t next = (uintptr_t)lua_topointer(L, -1);
+				
 				seen->nested = check_json_elm(L, -1);
+				/*uintptr_t next = seen->nested->id;
 				if(seen->check_next(seen, next)) {
 					lua_pop(L, 1);
 					size_t len = strlen(seen->b);
 					seen->b[len-1] = 0;
 					break; 
-				}
+				}*/
 				seen->marshal->obj_key(L, elm, seen);
 				//lua_pop(L, 1);
 
@@ -341,14 +342,16 @@ lua_json_render_object(lua_State *L, struct ref *seen)
 static int
 lua_json_object_del_key(lua_State *L)
 {
+	
 	json_elm *elm = check_json_elm(L, 1);
+	//printf("\n\n\n\nELM->IDX: #################----------------------------------############# %d ###########--------------------------------------->>>>>>>\n\n\n\n\n\n", elm->idx);
+
 	// stack { elm, ... }
 	//get_json_table(L, 1);
 	// stack { elm, ... env }
 	//lua_rawgeti(L, -1, 0);
 	lua_rawgeti(L, LUA_REGISTRYINDEX, elm->vtable);
 	lua_getfield(L, -1, "keys");
-	
 	size_t size = lua_objlen(L, -1);
 	for(size_t i = elm->idx; i <= size; i++) {
 		// stack { elm, ... env, keys }
@@ -360,6 +363,7 @@ lua_json_object_del_key(lua_State *L)
 	// stack { elm, ... env, keys }
 	lua_pop(L, 2);
 	// stack { elm, ... }
+
 	elm->nkeys--;
 	return 0;
 };
@@ -382,40 +386,36 @@ lua_json_object_newindex(lua_State *L)
 
 	if(vtype == LUA_TUSERDATA) {
 		nested = check_json_elm(L, -1);
-		if(is_recursive(L, elm, nested))
+		//if(is_recursive(L, elm, nested))
+		if(lua_json_elm_contians(L, elm, nested))
 			lua_error(L);
 		else
 			elm->nested = nested;
 	}
 
-	
 	switch(elm->ktype) {
 		case LUA_TNUMBER: {
 			elm->idx = (luaL_checkinteger(L, -2) +1);
 
 			if(elm->idx < 1 || elm->idx > (int)elm->nelms) {
-				fprintf(stderr, "ERROR: Index is out of bounds %d\n", elm->idx );
-				lua_error(L);
+				//fprintf(stderr, "ERROR: Index is out of bounds %d\n", elm->idx );
+				luaL_error(L, "ERROR: Index is out of bounds %d\n", elm->idx);
 				return 1;
 			}
 
-			bool ok = idx_to_key(L, elm);
-			if(DEBUG) if(ok) printf("It works -------------------->>>>>>>>>>>>> key [ %s ]\n", elm->key);
+			elm->idx_to_key(L, elm);
 			// stack { ..., elm, key, val }
 			lua_pushstring(L, elm->key);
 			// stack { ..., elm, key, val, key }
-			lua_insert(L, -3);
-			lua_remove(L, -2);
-			
+			lua_replace(L, -3);
+			//lua_remove(L, -2);
 			// stack { ..., elm, key, val }
 			break;
 		}
 		case LUA_TSTRING: {
 			
 			elm->key = lua_tolstring(L, -2, &elm->klen);
-			int ok = (int)key_to_idx(L, elm, true);
-			if(DEBUG) if(ok) printf("It works -------------------->>>>>>>>>>>>> idx [ %d ]\n", elm->idx); // 
-
+			elm->key_to_idx(L, elm, true);
 			break;
 		}
 	}
@@ -426,6 +426,7 @@ lua_json_object_newindex(lua_State *L)
 		lua_pop(L, 1);
 
 		if(elm->vtype == LUA_TUSERDATA) {
+
 			elm->quoted += (size_t)luaL_checknumber(L, -2);
 			elm->nkeys += (size_t)luaL_checknumber(L, -1);
 			lua_pop(L, 2);
@@ -459,7 +460,7 @@ lua_json_object_newindex(lua_State *L)
 		// stack { ..., elm, key, val, env, ex_val }
 		lua_json_elm_get_val_length(L, elm);
 		// stack { ..., elm, key, val, env, ex_val, ex_vlen }
-		elm->rlen -= luaL_checknumber(L, -1);
+		elm->rlen -= (size_t)luaL_checknumber(L, -1);
 		lua_pop(L, 1);
 
 		if(elm->vtype == LUA_TUSERDATA) {
@@ -477,7 +478,7 @@ lua_json_object_newindex(lua_State *L)
 
 	if(!is_new && vtype != LUA_TNIL && elm->idx <= (int)elm->nelms) {
 		lua_json_elm_get_val_length(L, elm);
-		elm->rlen += luaL_checknumber(L, -1);
+		elm->rlen += (size_t)luaL_checknumber(L, -1);
 		lua_pop(L, 1);
 
 		if(elm->vtype == LUA_TUSERDATA) {
@@ -499,18 +500,22 @@ lua_json_object_newindex(lua_State *L)
 	if (vtype == LUA_TNIL)  {
 		elm->rlen -= elm->nelms > 1 ?  0 : -1;
 		lua_json_object_del_key(L);
-		event ev = {0};
-		ev.type = ON_CHANGE;
-		lua_json_elm_update_len(elm, &nl);
+		if(elm && elm->nested && elm->root->id != elm->nested->id && elm->id != elm->nested->id){
+			event ev = {0};
+			ev.type = ON_CHANGE;
 
-		ev.data = &nl;
-		elm->event->set(elm->event->on_change, &ev);
-		if(elm && elm->nested){
-			if(DEBUG) printf("Un Sub Oject New Index ..\nelm: %ld\nnested: %ld\n", elm->id, elm->nested->id);
-			lua_json_elm_unsub(elm, elm->nested);
-		}
-		elm->nelms--;
+			lua_json_elm_update_len(elm, &nl);
+
+			ev.data = &nl;
+			
+			elm->event->set(elm->event->on_change, &ev);
 		
+			if(DEBUG) printf("Un Sub Oject New Index ..\nelm: %ld\nnested: %ld\n", elm->id, elm->nested->id);
+			if(elm && elm->nested) lua_json_elm_unsub(elm, elm->nested);
+		}
+	//}
+		elm->nelms--;
+	
 	}
 	
 
@@ -545,7 +550,6 @@ static int object_get_root(lua_State *L) {
 	return 0;
 }
 
-//bool recv_conn = false;
 static int
 lua_json_object_index(lua_State *L)
 {
@@ -562,12 +566,10 @@ lua_json_object_index(lua_State *L)
 			// stack { udata, key }
 			
 			elm->idx = (luaL_checkinteger(L, -1) +1);
-			bool ok = idx_to_key(L, elm);
+			elm->idx_to_key(L, elm);
 
 			lua_pop(L, 1);
 			lua_pushstring(L, elm->key);
-			if(DEBUG) if(ok) printf("It works -------------------->>>>>>>>>>>>> key[%d]: %s\n", elm->idx, elm->key);
-			//dumpstack(L);
 			// stack { udata, key }
 			break;
 		}
@@ -695,7 +697,7 @@ lua_json_object_gc(lua_State *L) {
 	luaL_unref(L, LUA_REGISTRYINDEX, self->vtable);
 
 	self->event->cleanup(self->event->on_change);
-    	self->event->cleanup(self->event->on_newindex);
+    self->event->cleanup(self->event->on_newindex);
 
 	free(self->event->on_change);
 	free(self->event->on_newindex);
@@ -737,7 +739,7 @@ lua_json_object_new(lua_State *L, bool parse)
 	elm->render 		= &lua_json_render_object;
 	elm->idx_to_key 	= &idx_to_key;
 	elm->key_to_idx 	= &key_to_idx;
-	elm->rlen 		= 2;
+	elm->rlen 			= 2;
 
 	lua_newtable(L);
 	lua_newtable(L);
@@ -755,7 +757,7 @@ lua_json_object_new(lua_State *L, bool parse)
 	lua_rawseti(L, -2, 0);
 	lua_pop(L, 2);
 	
-	if(DEBUG) printf("Object Vtable Id: %d\n", elm->vtable);
+	//if(DEBUG) printf("Object Vtable Id: %d\n", elm->vtable);
 
 	if (!parse && nargs > 0)
 	{

@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.1...3.27)
 
 if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
   add_definitions(-fpic -W -s)
-  add_compile_options(-W -Wall -Wextra -Os)
+  add_compile_options(-W -Wall -Wextra -Os -s)
 endif()
 
 project(

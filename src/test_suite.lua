@@ -110,6 +110,20 @@ end
 assert_equal(#large_arr-1, 1000, "Large array creation")
 assert_equal(large_arr[#large_arr-1], 1000, "Large array access")
 
+-- Test 21: Circular/Recursive Structures
+local o = JSON:object("name", "root")
+local a = JSON:array(1, 2)
+
+o.arr = a:unref()
+a:push(o) -- Create the circular loop
+--a[#a]=o
+
+local status, result = pcall(function() return o:tojson() end)
+assert_equal(status, true, "Circular structure handling (no crash)")
+-- Verify truncation: It should contain the first level but not infinite nesting
+local expected = '{"name":"root","arr":[1,2]}'
+assert_equal(result, expected, "Circular structure pruning at boundary")
+
 print("============================")
 print("Tests completed: " .. tests_passed .. "/" .. tests_total)
 if tests_passed == tests_total then
@@ -117,3 +131,4 @@ if tests_passed == tests_total then
 else
     print("Some tests FAILED! ❌")
 end
+

@@ -191,9 +191,9 @@ extern "C" {
 #endif
 
 extern const char *marshal_json[], *marshal_lua[];
-//typedef void (*NotifyFn)(void* context, size_t value);
 typedef struct event event;
 typedef void (*NotifyFn)(void* context, event *ev);
+
 // GLOBAL DEFINES
 #define DEBUG 0
 //#define USE_THREADS
@@ -314,11 +314,10 @@ typedef struct ref {
 	int elms;
 	int ltype;
 	bool isRoot, escape;
-	//int commas, vals;
 	int ptype;
 	char* b;
 	const char **Marshal;
-	bool(*check_next)(struct ref*, uintptr_t);
+	//bool(*check_next)(struct ref*, uintptr_t);
 
 }ref;
 
@@ -355,18 +354,15 @@ struct json_elm
 	int vtable, idx;
 	uintptr_t id;
 	uint8_t mode; // marshall mode
-	size_t recurs;
-	new_index_t toi;
+	
 	// analytics
 	size_t type;
 	size_t nelms;
 	size_t rlen, klen, vlen, quoted, nkeys;
 	int plen, ktype, vtype;
 	size_t children;
-	// lua_String *LS;
 	bool isRoot, is_nil, c_out, escape;
 	bool err, parsed;
-	// char* rbuf;
 	const char *typename, *key, *val, *errmsg;
 
 	bool (*key_to_idx)(lua_State *, json_elm *, bool);
@@ -374,7 +370,6 @@ struct json_elm
 	int (*tostring)(lua_State *);
 	int (*stringify)(lua_State *);
 	int (*parse)(lua_State *);
-
 	// recursion call
 	int (*render)(lua_State *, ref *);
 };
@@ -400,20 +395,15 @@ typedef struct elm_env {
 } elm_env;
 
 json_elm *check_json_elm(lua_State *L, int pos);
-void json_type(parse_elm *elm);
+bool lua_json_elm_contians(lua_State *L, json_elm *elm, json_elm *nested);
 int lua_json_elm_len(lua_State *L);
 int lua_json_elm_size(lua_State *L);
 int lua_json_elm_tostring(lua_State *L);
 int lua_json_elm_get_val_length(lua_State *L, json_elm *elm);
-
 int lua_json_elm_stringify(lua_State *L);
 int lua_json_elm_parse(lua_State *L);
-int get_json_val_length(lua_State *L, json_elm *elm);
 int lua_json_elm_info(lua_State *L);
-bool check_next(ref *seen, uintptr_t next);
 int lua_json_elm_get_rlen(lua_State *L);
-
-
 int lua_json_elm_env_add(lua_State *L, json_elm *elm, env_val *val, env_field field);
 int lua_json_elm_env_insert(lua_State *L, json_elm *elm, int idx, env_val *val, env_field field);
 int lua_json_elm_env_rem(lua_State *L, json_elm *elm, int idx, env_field field);
@@ -421,13 +411,10 @@ int lua_json_elm_env_get(lua_State *L, json_elm *elm , int idx, env_field field)
 void alloc_events(json_elm *elm);
 void lua_json_elm_update_len(json_elm *elm, nested_len *nl);
 void lua_json_elm_init_len(json_elm *elm, nested_len *nl);
-
-bool is_recursive(lua_State *L, json_elm *elm, json_elm *nested);
-
+void json_type(parse_elm *elm);
 void lua_json_elm_unsub(json_elm *elm, json_elm *nested) ;
 void lua_json_elm_sub(json_elm *elm, json_elm *nested);
 void lua_json_elm_on_newindex(void* ctx, event *ev);
 void lua_json_elm_on_change(void* ctx, event *ev);
-new_index_t typeof_index(json_elm *elm);
 
 #endif 

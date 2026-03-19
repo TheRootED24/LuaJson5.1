@@ -89,19 +89,21 @@ json_elm *check_json_elm(lua_State *L, int pos) {
 };
 
 void lua_json_elm_sub(json_elm *elm, json_elm *nested) {
-	elm->event->sub(nested->event->on_newindex, elm, lua_json_elm_on_newindex);
-	elm->event->sub(nested->event->on_change, elm, lua_json_elm_on_change);
+		elm->event->sub(nested->event->on_newindex, elm, lua_json_elm_on_newindex);
+		elm->event->sub(nested->event->on_change, elm, lua_json_elm_on_change);
+		if(DEBUG) printf("Successfully Subbed Elm: %ld To Nested Elm: %ld\n", elm->id, nested->id);
 }
 
 void lua_json_elm_unsub(json_elm *elm, json_elm *nested) {
-	elm->event->unsub(nested->event->on_newindex, elm, lua_json_elm_on_newindex);
-	elm->event->unsub(nested->event->on_change, elm, lua_json_elm_on_change);
+		elm->event->unsub(nested->event->on_newindex, elm, lua_json_elm_on_newindex);
+		elm->event->unsub(nested->event->on_change, elm, lua_json_elm_on_change);
+		if (DEBUG) printf("Successfully Unsubbed Elm: %ld From Nested Elm: %ld\n", elm->id, nested->id);
 }
 
 void lua_json_elm_update_len(json_elm *elm, nested_len *nl) {
-	nl->rlen 	= (elm->rlen - nl->rlen);
-	nl->quoted 	= (elm->quoted - nl->quoted);
-	nl->nkeys 	= (elm->nkeys - nl->nkeys);
+		nl->rlen 	= (elm->rlen - nl->rlen);
+		nl->quoted 	= (elm->quoted - nl->quoted);
+		nl->nkeys 	= (elm->nkeys - nl->nkeys);
 }
 
 void lua_json_elm_init_len(json_elm *elm, nested_len *nl) {
@@ -110,19 +112,25 @@ void lua_json_elm_init_len(json_elm *elm, nested_len *nl) {
 	nl->nkeys 	= elm->nkeys;
 }
 
-
 void lua_json_elm_on_newindex(void* ctx, event *ev) {
 	json_elm *self = (json_elm*)ctx;
 	event_type ev_type = ev->type;
 	nested_len *nested = (nested_len*)ev->data;
-
-	self->rlen 	+= nested->rlen;
+	self->rlen 	+=  nested->rlen;
 	self->quoted 	+= nested->quoted;
 	self->nkeys 	+= nested->nkeys;
+
+	// The Bubble: If this element has observers, notify them!
+	if(self->root->id != self->nested->id) {
+		if (self && self->event && self->event->on_newindex && self->event->on_newindex->observers) {
+			subject_set_values(self->event->on_newindex, (event*)ev);
+		}
+	}
 
 	if(DEBUG)
 		printf("%s %p event type: [ %d ] rlen updated: %ld quoted updated: %ld nkeys updated: %ld\n",
 				self->typename, self, ev_type, self->rlen, self->quoted, self->nkeys);
+
 	return;
 };
 
@@ -131,26 +139,52 @@ void lua_json_elm_on_change(void* ctx, event *ev)  {
 	event_type ev_type = ev->type;
 	nested_len *nested = (nested_len*)ev->data;
 
-	self->rlen	+= nested->rlen;
-	self->quoted 	+= nested->quoted;
-	self->nkeys 	+= nested->nkeys;
+		self->rlen 	+=  nested->rlen;
+		self->quoted 	+= nested->quoted;
+		self->nkeys 	+= nested->nkeys;
+
+	// The Bubble: If this element has observers, notify them!
+	if(self->root->id != self->id && self->root->id != self->nested->id) {
+		if (self && self->event && self->event->on_change && self->event->on_change->observers) {
+			subject_set_values(self->event->on_change, (event*)ev);
+		}
+	}
 
 	if(DEBUG)
 		printf("%s %p event type: [ %d ] rlen updated: %ld quoted updated: %ld nkeys updated: %ld\n",
 				self->typename, self, ev_type, self->rlen, self->quoted, self->nkeys);
 	
+
 	return;
 };
 
-/*bool is_keyed(Vstack *stack) {
-	if(stack)
-		return (stack[1].type == L_STR ? true : false);
+bool lua_json_elm_contians(lua_State *L, json_elm *elm, json_elm *nested) {
+	if(elm && nested) {
+		if( elm->vtable == nested->vtable) {
+			lua_pushfstring(L, "Error: recursive root element %d --> %d\n", (int)nested->id, (int)elm->id);
+			return true;
+		}
+		
+		lua_rawgeti(L, LUA_REGISTRYINDEX, nested->vtable);
+		lua_getfield(L, -1, "ids");
+		size_t size = lua_objlen(L, -1);
 
-	stack->err = true;
-	stack->errmsg = "Stack is corrupt !!";
+		for(size_t i = 0; i <= size; i++) {
+			lua_rawgeti(L, -1, i);
+			if(lua_isnumber(L, -1) && lua_tonumber(L, -1) == elm->vtable){
+				lua_pop(L, 3);
+				lua_pushfstring(L, "Error: recursive nested element %d --> %d\n", (int)nested->root->id, (int)nested->id);
+				return true;
+			}
 
+			lua_pop(L, 1);
+		}
+
+		lua_pop(L, 2);
+	}
+	
 	return false;
-}*/
+}
 
 bool is_recursive(lua_State *L, json_elm *elm, json_elm *nested) 
 {
@@ -163,34 +197,19 @@ bool is_recursive(lua_State *L, json_elm *elm, json_elm *nested)
 	return false;
 }
 
-
-
-new_index_t typeof_index(json_elm *elm) {
-	if(elm)
-		return (elm->vtype == LUA_TNIL ? NIL : elm->idx > (int)elm->nelms ? NEW : EXT);
-
-	return ERR;
-}
-
-bool check_next(ref *seen, uintptr_t next) {;
+// ToDo recursion at any level is not flaged at new_index. this function is now redundant
+/*bool check_next(ref *seen, uintptr_t next) {;
 	if(DEBUG) printf("rlen %ld root: %ld elm: %ld nested: %ld\n", seen->rlen, seen->root, seen->elm->id, seen->nested->id);
 	seen->elm->recurs++;
 	if(next == seen->root) {
-		if(++seen->depth > seen->max) 
+			seen->rlen = strlen(seen->b)+2; 
 			return true;
-		else {
-			seen->rlen += seen->nested->rlen;
-
-
-			if(DEBUG) printf("seen elm: %ld  seen nested: %ld seen rlen %ld\n", seen->elm->rlen, seen->nested->rlen, seen->rlen);
-			seen->b = realloc(seen->b, seen->rlen);
-			//seen->rlen = p;
-		}
 	}
+
 	seen->last = next;
 	
 	return false;
-};
+};*/
 
 size_t __lua_json_elm_get_rlen(json_elm *elm, int mode, bool esc) {
 	size_t rlen = 0;
@@ -201,7 +220,7 @@ size_t __lua_json_elm_get_rlen(json_elm *elm, int mode, bool esc) {
 			break;
 		case MARSHAL_LUA:
 			rlen += esc ? ((elm->rlen + (elm->quoted * 2)) - (elm->nkeys * 2))
-				    : (elm->rlen - (elm->nkeys * 2));
+				        : (elm->rlen - (elm->nkeys * 2));
 			break;
 	}
 
@@ -290,6 +309,29 @@ lua_json_elm_env_insert(lua_State *L, json_elm *elm, int idx, env_val *val, env_
 	return 0;
 }
 
+int
+lua_json_elm_env_rem(lua_State *L, json_elm *elm, int idx, env_field field) {
+	// stack {..., elm }
+	lua_rawgeti(L, LUA_REGISTRYINDEX, elm->vtable);
+	// stack {..., elm, vtable }
+	lua_getfield(L, -1, fields[field]);
+	// stack {..., elm, vtable, ids }
+	size_t size = lua_objlen(L, -1);
+
+	for (int i = idx; i <= (int)size; i++) {
+		lua_rawgeti(L, -1, i + 1); 			// Get element at i + 1
+		// stack { ..., elm, vtable, ids val[i + 1] }
+		lua_rawseti(L, -2, i); 	   			// Move it to i 
+		// stack { ..., elm, vtable }
+
+	}
+	// stack { ..., elm, vtable, ids }
+	lua_pop(L, 2);
+	// stack {..., elm }
+	return 0;
+};
+
+
 int lua_json_elm_get_val_length(lua_State *L, json_elm *elm) {
 	size_t rlen = 0, quoted = 0, nkeys = 0;
 	int vtype = lua_type(L, -1), rets = 1;
@@ -299,9 +341,6 @@ int lua_json_elm_get_val_length(lua_State *L, json_elm *elm) {
 		{
 			json_elm *nested = check_json_elm(L, -1);
             rlen +=  obj ? (elm->klen + 3) : 0;
-
-			if(elm->id == nested->id)
-				elm->recurs++;
 
 			nested->root = elm;
 			elm->nested = nested;
@@ -345,33 +384,12 @@ int lua_json_elm_get_val_length(lua_State *L, json_elm *elm) {
 		rets += 2;
 	}
 
+	// ToDo LUA_TNULL is no longer used for anything ??
 	elm->vtype = elm->vtype != LUA_TNULL ? vtype : elm->vtype;
 
 	lua_pushnumber(L, rlen);
 
 	return rets;
-};
-
-int
-lua_json_elm_env_rem(lua_State *L, json_elm *elm, int idx, env_field field) {
-	// stack {..., elm }
-	lua_rawgeti(L, LUA_REGISTRYINDEX, elm->vtable);
-	// stack {..., elm, vtable }
-	lua_getfield(L, -1, fields[field]);
-	// stack {..., elm, vtable, ids }
-	size_t size = lua_objlen(L, -1);
-
-	for (int i = idx; i <= (int)size; i++) {
-		lua_rawgeti(L, -1, i + 1); 			// Get element at i + 1
-		// stack { ..., elm, vtable, ids val[i + 1] }
-		lua_rawseti(L, -2, i); 	   			// Move it to i 
-		// stack { ..., elm, vtable }
-
-	}
-	// stack { ..., elm, vtable, ids }
-	lua_pop(L, 2);
-	// stack {..., elm }
-	return 0;
 };
 
 static int l_strip_all(lua_State *L) {
@@ -425,31 +443,31 @@ char* trim_const_char(const char *s) {
 int
 lua_json_elm_stringify(lua_State *L) {
 	json_elm *elm = check_json_elm(L, 1);
-
 	ref seen = {0};
 	seen.elm = elm;
 	seen.max = 1;
 	seen.depth = 0;
 	seen.marshal = lua_json_marshall_new(L);
 	seen.root = seen.last = (uintptr_t)lua_topointer(L, -1);
-	seen.check_next = &check_next;
+	//seen.check_next = &check_next;
 	seen.mode = elm->mode;
 	seen.escape = elm->escape;
 	seen.Marshal = elm->mode == MARSHAL_JSON ? marshal_json : marshal_lua;
 	seen.rlen = __lua_json_elm_get_rlen(elm, elm->mode, elm->escape);
+	seen.rlen = (int)seen.rlen > 0 ? seen.rlen : (elm->rlen * 2);
 	seen.ltype = LUA_TUSERDATA;
+
 	seen.b = malloc(seen.rlen + 1); 
-	memset(seen.b, 0, (seen.rlen + 1) );
-	
+	seen.b[0] = '\0'; // Start with an empty string
+
 	elm->render(L, &seen);
 
-	size_t lt = strlen(seen.b)+1; // null term
-	seen.b[lt]='\0';
+	size_t lt = strlen(seen.b); // null term
 	elm->rlen = lt;
-	lua_pushstring(L, seen.b);
+	lua_pushlstring(L, seen.b, lt);
 	free(seen.b);
 	free(seen.marshal);
-	//bool d = true;
+
 	if(DEBUG) {
 		printf("\n\n########### result ###########\n\n");
 		printf("mode: %s\nescape: %s\n", elm->mode == MARSHAL_JSON ? "json" : "lua", btoa(elm->escape));
@@ -469,7 +487,6 @@ lua_json_elm_stringify(lua_State *L) {
 
 int
 lua_json_elm_tostring(lua_State *L) {
-	//dumpstack(L, "elm_tostring");
 	json_elm *elm = check_json_elm(L, 1);
 	if(elm)
 		lua_pushfstring(L, "%s: %p", elm->typename, elm->id);
@@ -550,7 +567,6 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 			elm.index = val.buf[0];
 			
 			if (isKeyed) { 
-				//lua_pushlstring(L, key.buf + 1, key.len - 2);
 				key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
 				elm.key = lua_pushfstring(L, "$.%s", lua_tostring(L, -1));
 				lua_pop(L, 2);
@@ -564,7 +580,7 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 				lua_pushlstring(L, val.buf, (int)val.len);
 				const char *buf = lua_pushfstring(L, "{\"%s\": %s}", "dkey", lua_tostring(L, -1));
 				lua_pop(L, 2); 
-				//dumpstack(L);
+
 				struct mg_str djson = mg_str(buf);
 				elm.json = &djson;
 				elm.key = "$.dkey";
@@ -573,7 +589,6 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 			switch (elm.type) {
 				case JSON_NUMBER_TYPE: {
 					if (isKeyed) {
-						//lua_pushlstring(L, key.buf + 1, key.len - 2);
 						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
 						lua_pushnumber(L, elm.num);
 					}
@@ -581,15 +596,12 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 						lua_pushnumber(L, idx++);
 						lua_pushnumber(L, elm.num);
 					}
-					//printf("JSON NUMBER\n");
-					//dumpstack(L);
-					//jelm->nums++;
+
 					lua_settable(L, -3);
 					break;
 				}
 				case JSON_BOOL_TYPE: {
 					if (isKeyed) {
-						//lua_pushlstring(L, key.buf + 1, key.len - 2);
 						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
 						lua_pushboolean(L, elm.b);
 					}
@@ -597,15 +609,12 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 						lua_pushnumber(L, idx++);
 						lua_pushboolean(L, elm.b);
 					}
-					//printf("JSON BOOL\n");
-					//dumpstack(L);
-					//jelm->bools++;
+
 					lua_settable(L, -3);
 					break;
 				}
 				case JSON_LONG_TYPE: {
 					if (isKeyed) {
-						//lua_pushlstring(L, key.buf + 1, key.len - 2);
 						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
 						lua_pushnumber(L, elm.l);
 					}
@@ -613,15 +622,12 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 						lua_pushnumber(L, idx++);
 						lua_pushnumber(L, elm.l);
 					}
-					//printf("JSON LONG\n");
-					//dumpstack(L);
-					//jelm->longs++;
+
 					lua_settable(L, -3);
 					break;
 				}
 				case JSON_STRING_TYPE: {
 					if (isKeyed) {
-						//lua_pushlstring(L, key.buf + 1, key.len - 2);
 						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
 						lua_pushstring(L, elm.str);
 					}
@@ -629,14 +635,13 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 						lua_pushnumber(L, idx++);
 						lua_pushstring(L, elm.str);
 					}
+
 					free(elm.str);
-					//jelm->strings++;
 					lua_settable(L, -3);
 					break;
 				}
 				case JSON_NULL_TYPE: {
 					if (isKeyed) {
-						//lua_pushlstring(L, key.buf + 1, key.len - 2);
 						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
 						lua_pushlstring(L, val.buf, val.len);
 					}
@@ -644,14 +649,12 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 						lua_pushnumber(L, idx++);
 						lua_pushlstring(L, val.buf, val.len);
 					}
-					//printf("JSON BOOL\n");
-					//dumpstack(L);
-					//jelm->nulls++;
+
+					free(elm.str);
 					lua_settable(L, -3);
 					break;
 				}
 				case JSON_ARRAY_TYPE: {
-					//printf("NEW OBJECT !!!!!!!!!!!!!!!!\n");
 					if (isKeyed){
 						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
 						lua_json_elm_parse_array(L);
@@ -660,9 +663,7 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 						lua_pushnumber(L, idx++);
 						lua_json_elm_parse_array(L);
 					}
-					//isKeyed ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushnumber(L, idx++);
-					//lua_json_elm_parse_array(L);
-					//jelm->arrays++;
+
 					break;
 				}
 				case JSON_OBJECT_TYPE: {
@@ -674,7 +675,6 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 						lua_pushnumber(L, idx++);
 						lua_json_elm_parse_object(L);
 					}
-					//jelm->objects++;
 					break;
 				}
 				break;
@@ -683,12 +683,9 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 			if (*val.buf == '[' || *val.buf == '{') {
 				switch (*val.buf) {
 					case '[': {
-						//jelm->arrays++;
-						//jelm->nestedarrays++;
 						break;
 					}
 					case '{': {
-						//jelm->nestedobjects++;	
 						break;
 					}
 				}
@@ -709,6 +706,8 @@ static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth) {
 			}
 		}
 	}
+	//if(elm.str)
+		//free(elm.str);
 	// all done!! leave the table on the stack and return it
 	if (depth == 1) {
 		return 1;
@@ -722,6 +721,7 @@ lua_json_elm_parse(lua_State *L) {
 	const char *e = luaL_checkstring(L, -1);
 	const char *elm = trim_const_char(e);
 	lua_pop(L, lua_gettop(L));
+
 	if(elm[0] == '{') 
 		lua_json_elm_parse_object(L);
 	else if(elm[0] == '[')
@@ -733,9 +733,9 @@ lua_json_elm_parse(lua_State *L) {
 
 	struct mg_str json = mg_str(elm); 
 	__lua_json_elm_parse(L, json, -1);
-	//json_elm *jelm = check_json_elm(L, 1);
 
-	//printf("PARSED ELM TYPE: %s\nPARSED LENGTH: %ld\n", jelm->typename, jelm->rlen);
+	if(json.len > 0)
+		free(json.buf);
 	
 	return 1;
 };
@@ -763,14 +763,14 @@ void alloc_events(json_elm *elm) {
 	elm->event->on_newindex = (Subject*)malloc(sizeof(Subject));
 	memset(elm->event->on_newindex, 0, sizeof(*elm->event->on_newindex));
 
-    	elm->event->on_change = (Subject*)malloc(sizeof(Subject));
-    	memset(elm->event->on_change, 0, sizeof(*elm->event->on_change));
+	elm->event->on_change = (Subject*)malloc(sizeof(Subject));
+	memset(elm->event->on_change, 0, sizeof(*elm->event->on_change));
 	
 	elm->event->init 		= &subject_init;
 	elm->event->sub 		= &subject_subscribe;
 	elm->event->set 		= &subject_set_values;
 	elm->event->unsub 		= &subject_unsubscribe;
-	elm->event->cleanup 		= &subject_cleanup;
+	elm->event->cleanup 	= &subject_cleanup;
 
 	elm->event->init(elm->event->on_newindex);
 	elm->event->init(elm->event->on_change);

@@ -198,7 +198,7 @@ int __lua_json_render_lua_array(lua_State *L, struct ref *seen) {
 	// recursion
 	return 0;
 };
-
+/*
 static size_t __lua_json_lua_table_len(lua_State *L, int tbl_pos) {
 	size_t len = 0;
 	if(tbl_pos != -1) lua_pushvalue(L, tbl_pos);
@@ -217,6 +217,7 @@ static size_t __lua_json_lua_table_type(lua_State *L, int tbl_pos) {
 
 	return type;
 }
+*/
 
 int lua_json_lua_tojson(lua_State *L, bool parse) {
 	size_t size = lua_objlen(L, -1);
@@ -228,7 +229,7 @@ int lua_json_lua_tojson(lua_State *L, bool parse) {
 	ref seen = {0};
 	seen.root = (uintptr_t)lua_topointer(L, -1);
 	seen.last = seen.root;
-	seen.check_next = &check_next;
+	//seen.check_next = &check_next;
 
 	seen.ltype = LUA_TUSERDATA;
 	seen.b = malloc(MAX_LUA_SIZE+1); // 1MB by default (adjust in "lua_json_lua.h" to suite your needs)
