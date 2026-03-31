@@ -50,5 +50,22 @@ local o = JSON:object("test","object", "age",99, "isRoot",false, "nully",null);
 
 print(o:tojson());
 
-elm_copy(o)
-elm_copy(a)
+arr = JSON:parse('[1,2,3,4,5]')
+arr[#arr] = o
+print(arr:tojson())
+arr=nil
+
+arr = JSON.parse([[
+	{
+		"ip":"192.168.1.1",
+		"name":"teds",
+		"expires":19087,
+		"hobbies":[
+					"fish", 
+					"hunt", 
+					"run"
+		]
+	}
+]])
+
+print(arr.hobbies[0])

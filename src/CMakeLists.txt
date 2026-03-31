@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.1...3.27)
 
 if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
   add_definitions(-fpic -W -s)
-  add_compile_options(-W -Wall -Wextra -Os)
+  add_compile_options(-W -Wall -Wextra  -g)
 endif()
 
 project(
@@ -23,7 +23,12 @@ add_library(JSON SHARED lua_json.c
                         lua_json_marshal.c
                         lua_json_elm_event.c)   
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fpic")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -s")
-target_link_libraries(JSON mongoose)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
+target_link_libraries(JSON PRIVATE mongoose)
+
+find_package(PkgConfig REQUIRED)
+# 2. Search for the luajit library
+pkg_check_modules(LUAJIT REQUIRED IMPORTED_TARGET luajit)
+target_link_libraries(JSON PRIVATE PkgConfig::LUAJIT)
 
 install(TARGETS JSON DESTINATION /usr/lib/lua/LuaJson/)
