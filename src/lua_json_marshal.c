@@ -46,35 +46,35 @@ const char *marshal_json[] = {
     "}",            		// CloseObj     11
     "[",            		// OpenArr      12
     "]",            		// CloseArr     13
-    "\\\"%s\\\":\\\"%s\\\"", 	// EscObjString 14
+    "\\\"%s\\\":\\\"%s\\\"", // EscObjString 14
     "\\\"%s\\\"" ,      	// EscArrString 15
-    "\\\"%s\\\":",		// EscObjKey    16
+    "\\\"%s\\\":",			// EscObjKey    16
     "\\\"%s\\\":%f",    	// EscObjNumber 17
     "\\\"%s\\\":%s",    	// EscObjBool   18
     "\\\"%s\\\":%s"    		// EscObjNull   19
 };
 
 const char *marshal_lua[] = {
-    "%s=",			// ObjKey      	0
+    "%s=",				// ObjKey      	0
     "%s=\"%s\"",		// ObjString    1
     "%s=%f",			// ObjNumber    2
     "%s=%s",			// ObjBool      3
     "%s=%s",			// ObjNull      4
     "\"%s\"",			// ArrString	5
-    "%f",			// ArrNumber    6
-    "%s",			// ArrBool      7
-    "%s",			// ArrNull      8
-    ",",			// Next     	9
-    "{",			// OpenObj      10
-    "}",			// CloseObj     11
-    "[",			// OpenArr      12
-    "]",			// CloseArr     13
-    "%s=\\\"%s\\\"",		// EscObjString 14
+    "%f",				// ArrNumber    6
+    "%s",				// ArrBool      7
+    "%s",				// ArrNull      8
+    ",",				// Next     	9
+    "{",				// OpenObj      10
+    "}",				// CloseObj     11
+    "[",				// OpenArr      12
+    "]",				// CloseArr     13
+    "%s=\\\"%s\\\"",	// EscObjString 14
     "\\\"%s\\\"",		// EscArrString 15
     "\\\"%s\\\":",		// EscObjKey    16
-    "\\\"%s\\\":%f",    	// EscObjNumber 17
-    "\\\"%s\\\":%s",    	// EscObjBool   18
-    "\\\"%s\\\":%s"    		// EscObjNull   19
+    "\\\"%s\\\":%f",    // EscObjNumber 17
+    "\\\"%s\\\":%s",    // EscObjBool   18
+    "\\\"%s\\\":%s"    	// EscObjNull   19
 
 };
 
@@ -109,7 +109,6 @@ marshal_object_close(ref *seen)
 static int
 marshal_object_key(lua_State *L, json_elm *elm, ref *seen)
 {
-	//dumpstack(L);
 	if(seen->escape && seen->mode == MARSHAL_JSON)
 		strcat(seen->b, lua_pushfstring(L, seen->Marshal[EscObjKey], elm->key));
 	else
@@ -125,7 +124,7 @@ marshal_object_string(lua_State *L, json_elm *elm, ref *seen)
 {
 	elm->val = luaL_checklstring(L, -1, &elm->vlen);
 
-	if ( elm->vlen  == 4 && strcmp(elm->val, "null") == 0) 
+	if (elm->val == NULL_CACHE) 
 		if(seen->escape && seen->mode == MARSHAL_JSON)
 			strcat(seen->b, lua_pushfstring(L, seen->Marshal[EscObjNull], elm->key, elm->val));
 		else
@@ -157,16 +156,18 @@ marshal_object_number(lua_State *L, json_elm *elm, ref *seen)
 static int
 marshal_object_bool(lua_State *L, json_elm *elm, ref *seen)
 {
-	lua_pushvalue(L, -1);
+    lua_pushvalue(L, -1); // Push boolean
 
-	seen->escape && seen->mode == MARSHAL_JSON ? strcat(seen->b, lua_pushfstring(L, seen->Marshal[EscObjBool], elm->key, luaL_checknumber(L, -1)))
-		     				   				   : strcat(seen->b, lua_pushfstring(L, seen->Marshal[ObjBool], elm->key, btoa(lua_toboolean(L, -1))));
+    // THE FIX: Removed luaL_checknumber. Added btoa(lua_toboolean).
+    if (seen->escape && seen->mode == MARSHAL_JSON) {
+        strcat(seen->b, lua_pushfstring(L, seen->Marshal[EscObjBool], elm->key, btoa(lua_toboolean(L, -1))));
+    } else {
+        strcat(seen->b, lua_pushfstring(L, seen->Marshal[ObjBool], elm->key, btoa(lua_toboolean(L, -1))));
+    }
 
-	lua_pop(L, 2);
-
-	return 0;				
-};
-
+    lua_pop(L, 2); // Pop Boolean + New String
+    return 0;               
+}
 
 // ****************************** MARSHAL ARRAY ELEMENT ******************************************
 static int
@@ -190,7 +191,7 @@ marshal_array_string(lua_State *L, json_elm *elm, ref *seen)
 {
 	elm->val = luaL_checklstring(L, -1, &elm->vlen);
 
-	if (elm->vlen  == 4 && strcmp(elm->val, "null") == 0)
+	if (elm->val == NULL_CACHE)
 		strcat(seen->b, lua_pushfstring(L, seen->Marshal[ArrNull], elm->val));
 	else 
 		if(seen->escape)

@@ -31,6 +31,7 @@ extern "C" {
 }
 #endif
 
+extern const char *NULL_CACHE;
 typedef struct ref ref;
 
 typedef enum LUA_JSON_TYPES JSON_TYPE;

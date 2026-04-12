@@ -19,6 +19,7 @@ print("\n--- Modifying Leaf ---")
 leaf.child.status = "Active"  -- This adds roughly 18 bytes ( "status":"Active", )
 
 -- 4. Check the results
+print("New Leaf2 Length:   " ..leaf2:len())
 print("New Leaf Length:   " .. leaf:len())
 print("New Branch Length: " .. branch:len())
 print("New Root Length:   " .. root:len())
@@ -31,11 +32,14 @@ else
     print("\n❌ FAIL: Change stopped at the Branch. No bubbling.")
 end
 
-root:tojson():len()
+root:tojson()
 
-leaf.env.child=nil
+print("New Leaf2 Length:   " ..leaf2:len())
 print("New Leaf Length:   " .. leaf:len())
 print("New Branch Length: " .. branch:len())
 print("New Root Length:   " .. root:len())
+leaf.child=nil
 
-root:tojson():len()
+print(root:tojson())
+print(root:len())
+print(#root, #leaf)

@@ -4,7 +4,7 @@ local JSON = require "JSON"
 
 function elm_copy(a)
 
-    local copy = JSON:array(a.env)
+    local copy = a:unref()
     --a:unref();
     print(copy, a)
 end

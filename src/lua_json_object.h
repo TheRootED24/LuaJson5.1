@@ -81,6 +81,8 @@ typedef struct json_elm json_elm;
 typedef struct elm_ids elm_ids;
 
 extern const char *marshal_json[], *marshal_lua[], *fields[];
+extern const char *NULL_CACHE;
+
 void lua_json_open_object(lua_State *L);
 //int lua_json_object_newindex(lua_State *L);
 //int lua_json_object_index(lua_State *L);

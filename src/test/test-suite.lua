@@ -32,7 +32,6 @@ assert_equal(arr:tojson(), "[1,2,3,4,5]", "Basic array creation")
 
 -- Test 2: Basic object creation
 local obj = JSON:object("name", "test", "value", 42)
-print(obj:tojson())
 assert_equal(obj:tojson(), '{"name":"test","value":42}', "Basic object creation")
 
 -- Test 3: Array length
@@ -100,8 +99,9 @@ obj.name = nil
 assert_equal(obj:tojson(), '{"value":42}', "Object key deletion")
 
 -- Test 19: Mixed types
-local mixed = JSON:array(1, "string", true, "null", JSON:object("nested", "value"))
+local mixed = JSON:array(1, "string", true, null, JSON:object("nested", "value"))
 assert_equal(mixed:tojson(), '[1,"string",true,null,{"nested":"value"}]', "Mixed types")
+
 
 -- Test 20: Large array performance
 local large_arr = JSON:array()
@@ -109,8 +109,6 @@ for i = 0, 1000 do
     large_arr:push(i)
 end
 assert_equal(#large_arr-1, 1000, "Large array creation")
-print(large_arr:len(), #large_arr)
-print(large_arr[#large_arr-1])
 assert_equal(large_arr[#large_arr-1], 1000, "Large array access")
 
 -- Test 21: Circular/Recursive Structures
@@ -119,7 +117,6 @@ local a = JSON:array(1, 2)
 
 o.arr = a:unref()
 a:push(o) -- Create the circular loop
---a[#a]=o
 
 local status, result = pcall(function() return o:tojson() end)
 assert_equal(status, true, "Circular structure handling (no crash)")
