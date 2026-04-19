@@ -19,11 +19,21 @@ local total_ms = (end_time - start_time) * 1000
 local per_parse_ms = total_ms / iterations
 
 print(string.format("Total Parse Time: %.3f ms", total_ms))
-print(string.format("Per Full Array Parse: %.4f ms", per_parse_ms))
+print(string.format("Per Full Array Parse: (%d bytes) %.4f ms ", hg:len(), per_parse_ms))
 
 
-
---print(hg:tojson(true))
---print("-------------tolua(true)----------")
---print(hg[0]:tolua(true))
-
+print("-------------tojson()----------")
+--hg[0].env[1]=nil
+--print(hg:tojson())
+bp =#hg
+--hg:pop()
+print(bp, #hg)
+hg:tojson()
+print(hg:len())
+--[[print("-------------tojson(true)----------")
+print(hg[0]:tojson())
+print("-------------tolua()----------")
+print(hg[99]:tolua())
+print("-------------tolua(true)----------")
+print(hg[99]:tolua())
+]]--

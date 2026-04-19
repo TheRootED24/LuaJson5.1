@@ -119,10 +119,87 @@ o.arr = a:unref()
 a:push(o) -- Create the circular loop
 
 local status, result = pcall(function() return o:tojson() end)
-assert_equal(status, true, "Circular structure handling (no crash)")
+assert_equal(status, true, "Unref structure handling (no crash)")
 -- Verify truncation: It should contain the first level but not infinite nesting
 local expected = '{"name":"root","arr":[1,2]}'
-assert_equal(result, expected, "Circular structure pruning at boundary")
+assert_equal(result, expected, "Unref structure pruning at boundary")
+
+local arr = JSON:array(1,2,3,4,5);
+
+arr.env[5]=6;
+local res = arr:tojson()
+local expected = '[1,2,3,4,6]'
+assert_equal(res, expected, "Array env update value using 1 based index")
+
+arr.env[#arr+1]=7
+local res = arr:tojson()
+local expected = '[1,2,3,4,6,7]'
+assert_equal(res, expected, "Array env set value using 1 based index")
+
+arr.env[#arr]=nil
+local res = arr:tojson()
+local expected = '[1,2,3,4,6]'
+assert_equal(res, expected, "Array env (nil) rem value using 1 based index")
+
+arr.env:pop()
+local res = arr:tojson()
+local expected = '[1,2,3,4]'
+assert_equal(res, expected, "Array env pop value")
+
+arr.env:push(5)
+local res = arr:tojson()
+local expected = '[1,2,3,4,5]'
+assert_equal(res, expected, "Array env push value")
+
+local n = arr.env:shift()
+local an = 1
+local res = arr:tojson()
+local expected = '[2,3,4,5]'
+assert_equal(res, expected, "Array env shift value")
+
+
+local n = arr.env:unshift(-2, -1, 0, 1)
+local an = #arr
+local res = arr:tojson()
+local expected = '[-2,-1,0,1,2,3,4,5]'
+assert_equal(res, expected, "Array env unshift 2 values")
+
+
+local at = {1,2,3,4,5}
+local ta = JSON:parse_table(at)
+local res = ta:tojson()
+local expected = '[1,2,3,4,5]'
+assert_equal(res, expected, "Array inline table args")
+
+local mt = {1,2,3,4,5, test="this", age=99}
+local ma = JSON:parse_table(mt)
+local res = ma:tojson()
+local expected = '[1,2,3,4,5,{"test":"this","age":99}]'
+assert_equal(res, expected, "Array inline mixed table parsed as an array")
+
+local mnt = {1,2,3,4,5, test="this", age=99,nested={more="data", name="teddy"}}
+local mna = JSON:parse_table(mnt)
+local res = mna:tojson()
+local expected = '[1,2,3,4,5,{"test":"this","age":99,"nested":{"more":"data","name":"teddy"}}]'
+assert_equal(res, expected, "Array inline mixed table with nested object parsed as an array")
+
+local mnt = {1,2,3,4,5,{6,7,8,9},test="this", age=99, nested={more="data", name="teddy"}}
+local mna = JSON:parse_table(mnt, "-o", "arr")
+local res = mna:tojson()
+local expected = '{"test":"this","age":99,"nested":{"more":"data","name":"teddy"},"arr":[1,2,3,4,5,[6,7,8,9]]}'
+assert_equal(res, expected, "Parse inline mixed table user supplied name for nested elmenets")
+
+local mnt = {1,2,3,4,5,{6,7,8,9},test="this", age=99, nested={more="data", name="teddy"}}
+local mna = JSON:parse_table(mnt, "-a", "arr")
+local res = mna:tojson()
+local expected = '[1,2,3,4,5,[6,7,8,9],{"test":"this","age":99,"nested":{"more":"data","name":"teddy"}}]'
+assert_equal(res, expected, "Parse inline mixed table user override element type -a ")
+
+local mnt = {1,2,3,4,5,{6,7,8,9},test="this", age=99, nested={more="data", name="teddy"}}
+local mna = JSON:parse_table(mnt, "-a", true)
+local res = mna:tojson()
+local expected = '[1,2,3,4,5,[6,7,8,9]]'
+assert_equal(res, expected, "Parse inline mixed table user override mixed parsing")
 
 print("============================")
 print("Tests completed: " .. tests_passed .. "/" .. tests_total)

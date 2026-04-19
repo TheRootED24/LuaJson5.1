@@ -211,11 +211,16 @@ typedef void (*NotifyFn)(void* context, event *ev);
 #define INIT_LOCK(s) (1)
 #define DESTROY_LOCK(s) ((void)0)
 
+#define lua_absindex(L, i) \
+    ((i) > 0 || (i) <= LUA_REGISTRYINDEX ? (i) : lua_gettop(L) + (i) + 1)
+
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
 #define ERROR(msg) \
     fprintf(stderr, "[ ERROR ] %s:%d: %s (errno: %d, %s)\n", \
             __FILENAME__, __LINE__, msg, errno, strerror(errno))
+
+extern void dumpstack(lua_State *L, const char *msg);
 
 #define btoa(x) ((x) ? "true" : "false")
 #define null "null"
@@ -315,11 +320,13 @@ typedef struct marshal_t {
 
 typedef struct ref {
 	int depth, max, ids;
+	lua_State *ML;
+	luaL_Buffer *B;
 	json_elm *elm, *nested;
 	marshal *marshal;
 	uintptr_t root, last, next;
 	uint8_t mode;
-	size_t rlen;
+	size_t rlen, quoted, nkeys;
 	int elms;
 	int ltype;
 	bool isRoot, escape;
@@ -336,7 +343,7 @@ typedef struct nested_len {
 
 typedef struct elm_event {
 	json_elm *root;
-	struct Subject *on_newindex, *on_change;
+	struct Subject *on_newindex, *on_change, *on_env;
 	int (*init)		(Subject *s);
 	void (*sub)		(Subject *s, void *ctx, NotifyFn fn);
 	void (*unsub)	(Subject *s, void *ctx, NotifyFn fn);
@@ -370,18 +377,20 @@ typedef struct elm_rlen {
 
 }elm_rlen;
 
+
 // BASE JSON ELM CLASS
 struct json_elm
 {
 	struct json_elm *root, *nested;
 	// events
+	bool index_json;
 	elm_event *event;
 	lua_State *L;
 	elm_vlen *base;
 	uint8_t toi;
 	int vtable, idx;
 	uintptr_t id, env_id;
-	bool is_env_index, is_exval, idx_set;
+	bool is_env_index, is_exval, stale, align;
 	const char* dom_id; // Add this for the JS bridge
 	uint8_t mode; // marshall mode
 	
@@ -392,6 +401,7 @@ struct json_elm
 	int plen, ktype, vtype, xvtype;
 	size_t children;
 	bool isRoot, is_nil, c_out, escape;
+	uint8_t elm_bi, env_bi;
 	bool err, parsed;
 	const char *typename, *key, *val, *errmsg;
 
@@ -401,6 +411,7 @@ struct json_elm
 	void (*check_idx)(json_elm *);
 	int (*tostring)(lua_State *);
 	int (*stringify)(lua_State *);
+	int (*del)(lua_State *);
 	int (*parse)(lua_State *);
 	// recursion call
 	int (*render)(lua_State *, ref *);
@@ -434,14 +445,17 @@ typedef enum {
 }index_type;
 
 
-
-json_elm *check_json_elm(lua_State *L, int pos);
+//json_elm* check_json_env(lua_State *L, bool align);
+//json_elm *check_json_elm(lua_State *L, int pos);
+json_elm *check_json_elm2(lua_State *L, int pos, bool align);
+//json_elm *check_json_elm(lua_State *L, int pos, bool align);
 //bool lua_json_elm_contians(lua_State *L, json_elm *elm, json_elm *nested);
 bool lua_json_elm_contains(lua_State *L, json_elm *elm, json_elm *nested);
 int lua_json_elm_len(lua_State *L);
 int lua_json_elm_size(lua_State *L);
 int lua_json_elm_tostring(lua_State *L);
-int lua_json_elm_get_val_length(lua_State *L, json_elm *elm);
+//int lua_json_elm_get_val_length(lua_State *L, json_elm *elm);
+void lua_json_elm_get_val_length(lua_State *L, json_elm *elm, elm_rlen *erl);
 int lua_json_elm_stringify(lua_State *L);
 int lua_json_elm_parse(lua_State *L);
 int lua_json_elm_info(lua_State *L);
@@ -459,6 +473,7 @@ void lua_json_elm_unsub(json_elm *elm, json_elm *nested) ;
 void lua_json_elm_sub(json_elm *elm, json_elm *nested);
 void lua_json_elm_on_newindex(void* ctx, event *ev);
 void lua_json_elm_on_change(void* ctx, event *ev);
+void lua_json_env_on_change(void* ctx, event *ev);
 int L_json_elm_bind_dom(lua_State *L);
 int lua_json_elm_gc(lua_State *L);
 
@@ -477,6 +492,10 @@ int lua_json_elm_get_quoted(lua_State *L);
 int lua_json_elm_get_nkeys(lua_State *L);
 bool check_next(lua_State *L, ref *seen, uintptr_t next);
 int lua_json_elm_print_ids(lua_State *L);
+int lua_json_elm_is_stale(lua_State *L);
+size_t lua_json_lua_elm_find_nil(lua_State *L, json_elm *elm);
+int find_nil(lua_State *L);
+int lua_json_elm_index_base(lua_State *L);
 //int lua_json_elm_env_add(lua_State *L, json_elm *elm, env_val *val, env_field field);
 //int lua_json_elm_env_insert(lua_State *L, json_elm *elm, int idx, env_val *val, env_field field);
 //int lua_json_elm_env_rem(lua_State *L, json_elm *elm, int idx, env_field field);

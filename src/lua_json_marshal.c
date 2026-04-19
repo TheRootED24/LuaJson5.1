@@ -1,36 +1,5 @@
 #include "lua_json_marshal.h"
 
-//#define DUMPSTACK 1
-
-#ifdef DUMPSTACK
-static void dumpstack(lua_State *L)
-{
-	int top = lua_gettop(L);
-	for (int i = 1; i <= top; i++)
-	{
-		printf("%d\t%s\t", i, luaL_typename(L, i));
-		switch (lua_type(L, i))
-		{
-		case LUA_TNUMBER:
-			printf("%g\n", lua_tonumber(L, i));
-			break;
-		case LUA_TSTRING:
-			printf("%s\n", lua_tostring(L, i));
-			break;
-		case LUA_TBOOLEAN:
-			printf("%s\n", (lua_toboolean(L, i) ? "true" : "false"));
-			break;
-		case LUA_TNIL:
-			printf("%s\n", "nil");
-			break;
-		default:
-			printf("%p\n", lua_topointer(L, i));
-			break;
-		}
-	}
-};
-#endif
-
 const char *marshal_json[] = {
     "\"%s\":",      		// ObjKey      	0
     "\"%s\":\"%s\"",		// ObjString    1
@@ -81,7 +50,8 @@ const char *marshal_lua[] = {
 static int 
 marshal_next(ref *seen)
 {
-	strcat(seen->b, seen->Marshal[Next]);
+	//strcat(seen->b, seen->Marshal[Next]);
+	luaL_addstring(seen->B, seen->Marshal[Next]);
 
 	return 0;
 };
@@ -91,7 +61,8 @@ marshal_next(ref *seen)
 static int
 marshal_object_open(ref *seen)
 {
-	strcat(seen->b, seen->Marshal[OpenObj]);
+	//strcat(seen->b, seen->Marshal[OpenObj]);
+	luaL_addstring(seen->B, seen->Marshal[OpenObj]);
 
 	return 0;
 };
@@ -100,13 +71,29 @@ marshal_object_open(ref *seen)
 static int
 marshal_object_close(ref *seen)
 {
-	strcat(seen->b, seen->Marshal[CloseObj]);
-
+	//strcat(seen->b, seen->Marshal[CloseObj]);
+	luaL_addstring(seen->B, seen->Marshal[CloseObj]);
 	return 0;
 };
 
-
 static int
+marshal_object_key(lua_State *L, json_elm *elm, ref *seen)
+{
+    // lua_pushfstring pushes the result and returns a pointer to it.
+    if(seen->escape && seen->mode == MARSHAL_JSON)
+        luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[EscObjKey], elm->key));
+    else
+        luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[ObjKey], elm->key));
+
+    // 4. Cleanup
+    // Pop the formatted string from L to keep the stack neutral.
+    lua_pop(L, 1);
+	seen->nkeys++;
+
+    return 0;
+}
+
+/*static int
 marshal_object_key(lua_State *L, json_elm *elm, ref *seen)
 {
 	if(seen->escape && seen->mode == MARSHAL_JSON)
@@ -117,9 +104,9 @@ marshal_object_key(lua_State *L, json_elm *elm, ref *seen)
 	lua_pop(L, 1);
 
 	return 0;
-};
+};*/
 
-static int
+/*static int
 marshal_object_string(lua_State *L, json_elm *elm, ref *seen)
 {
 	elm->val = luaL_checklstring(L, -1, &elm->vlen);
@@ -138,9 +125,38 @@ marshal_object_string(lua_State *L, json_elm *elm, ref *seen)
 	lua_pop(L, 1);
 
 	return 0;
-};
+};*/
 
-static int
+static int marshal_object_string(lua_State *L, json_elm *elm, ref *seen)
+{
+    // Retrieve the string pointer from the stack (Index -1)
+    elm->val = luaL_checklstring(L, -1, &elm->vlen);
+
+    if (elm->val == NULL_CACHE) 
+    {
+        if(seen->escape && seen->mode == MARSHAL_JSON)
+            luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[EscObjNull], elm->key, elm->val));
+        else
+            luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[ObjNull], elm->key, elm->val));
+    }
+    else 
+    {
+        if(seen->escape)
+            luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[EscObjString], elm->key, elm->val));
+        else
+            luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[ObjString], elm->key, elm->val));
+
+		seen->nkeys++;
+		seen->quoted++;
+    }
+
+    // Clean up: Pop the formatted string pushed by lua_pushfstring
+    lua_pop(L, 1);
+
+    return 0;
+}
+
+/*static int
 marshal_object_number(lua_State *L, json_elm *elm, ref *seen)
 {
 	lua_pushvalue(L, -1);
@@ -167,10 +183,39 @@ marshal_object_bool(lua_State *L, json_elm *elm, ref *seen)
 
     lua_pop(L, 2); // Pop Boolean + New String
     return 0;               
+}*/
+
+static int marshal_object_number(lua_State *L, json_elm *elm, ref *seen)
+{
+    lua_pushvalue(L, -1); // Stack: [..., val, val_copy]
+
+    if(seen->escape && seen->mode == MARSHAL_JSON)
+        luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[EscObjNumber], elm->key, luaL_checknumber(L, -1)));
+    else
+        luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[ObjNumber], elm->key, luaL_checknumber(L, -1)));
+
+    // Stack: [..., val, val_copy, fmt_string]
+    lua_pop(L, 2); // Pop val_copy and fmt_string. Stack: [..., val]
+
+    return 0;				
+}
+
+static int marshal_object_bool(lua_State *L, json_elm *elm, ref *seen)
+{
+    lua_pushvalue(L, -1); // Stack: [..., val, val_copy]
+
+    if (seen->escape && seen->mode == MARSHAL_JSON)
+        luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[EscObjBool], elm->key, btoa(lua_toboolean(L, -1))));
+    else
+        luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[ObjBool], elm->key, btoa(lua_toboolean(L, -1))));
+
+    // Stack: [..., val, val_copy, fmt_string]
+    lua_pop(L, 2); 
+    return 0;
 }
 
 // ****************************** MARSHAL ARRAY ELEMENT ******************************************
-static int
+/*static int
 marshal_array_open(ref *seen)
 {
 	strcat(seen->b, seen->Marshal[OpenArr]);
@@ -184,9 +229,23 @@ marshal_array_close(ref *seen)
 	strcat(seen->b, seen->Marshal[CloseArr]);
 
 	return 0;
-};
+};*/
 
-static int 
+static int marshal_array_open(ref *seen)
+{
+    // Replace strcat with Buffer Append
+    luaL_addstring(seen->B, seen->Marshal[OpenArr]);
+    return 0;
+}
+
+static int marshal_array_close(ref *seen)
+{
+    // Replace strcat with Buffer Append
+    luaL_addstring(seen->B, seen->Marshal[CloseArr]);
+    return 0;
+}
+
+/*static int 
 marshal_array_string(lua_State *L, json_elm *elm, ref *seen)
 {
 	elm->val = luaL_checklstring(L, -1, &elm->vlen);
@@ -202,9 +261,34 @@ marshal_array_string(lua_State *L, json_elm *elm, ref *seen)
 	lua_pop(L, 1);
 
 	return 0;
-};
+};*/
 
-static int
+static int 
+marshal_array_string(lua_State *L, json_elm *elm, ref *seen)
+{
+    // 1. Get pointer to source string
+    elm->val = luaL_checklstring(L, -1, &elm->vlen);
+
+    // 2. Format and Append
+    if (elm->val == NULL_CACHE)
+        luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[ArrNull], elm->val));
+    else 
+    {
+        if(seen->escape)
+            luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[EscArrString], elm->val));
+        else
+            luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[ArrString], elm->val));
+
+		seen->quoted++;
+    }
+    
+    // 3. Cleanup: Pop the formatted string from stack
+    lua_pop(L, 1);
+
+    return 0;
+}
+
+/*static int
 marshal_array_number(lua_State *L, ref *seen)
 {
 	lua_pushvalue(L, -1);
@@ -224,7 +308,33 @@ marshal_array_bool(lua_State *L, ref *seen)
 	lua_pop(L, 2);
 
 	return 0;				
-};
+};*/
+
+static int marshal_array_number(lua_State *L, ref *seen)
+{
+    lua_pushvalue(L, -1); // Stack: [..., val, val_copy]
+
+    // Append formatted number to Buffer
+    luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[ArrNumber], luaL_checknumber(L, -1)));
+
+    // Pop val_copy and the string pushed by lua_pushfstring
+    lua_pop(L, 2);
+
+    return 0;				
+}
+
+static int marshal_array_bool(lua_State *L, ref *seen)
+{
+    lua_pushvalue(L, -1); // Stack: [..., val, val_copy]
+
+    // Append formatted boolean to Buffer
+    luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[ArrBool], btoa(lua_toboolean(L, -1))));
+
+    // Pop val_copy and the string pushed by lua_pushfstring
+    lua_pop(L, 2);
+
+    return 0;				
+}
 
 marshal* lua_json_marshall_new() {
 	marshal *m = (marshal*)malloc(sizeof(marshal));

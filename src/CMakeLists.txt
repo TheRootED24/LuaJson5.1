@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.1...3.27)
 
 if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
   add_definitions(-fPIC -W -s)
-  add_compile_options(-W -Wall -Wextra -O3)
+  add_compile_options(-W -Wall -Wextra -O3 -g)
 endif()
 
 project(
@@ -23,7 +23,7 @@ add_library(JSON SHARED lua_json.c
                         lua_json_marshal.c
                         lua_json_elm_event.c)   
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -s")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -g")
 target_link_libraries(JSON PRIVATE mongoose)
 
 find_package(PkgConfig REQUIRED)

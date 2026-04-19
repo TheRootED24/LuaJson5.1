@@ -54,7 +54,8 @@ extern "C" {
 typedef enum {
     ON_NEWINDEX,
     ON_INDEX,
-    ON_CHANGE
+    ON_CHANGE,
+    ON_ENV
 }event_type;
 
 typedef struct event {
