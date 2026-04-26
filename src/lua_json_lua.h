@@ -17,8 +17,10 @@
  */
  // ####################################################################################### API DOCUMENTATION ################################################################################################### //
 
+
  /**
-*LuaJson lua class
+*JSON.lua class
+@classmod lua
 */
 
 /**
@@ -94,15 +96,10 @@ typedef struct ref ref;
 typedef struct json_elm json_elm;
 typedef struct lua_parser lua_parser;
 
-int lua_json_lua_parse(lua_State *L);
 int lua_json_lua_stringify(lua_State *L);
-int __lua_json_render_lua_object(lua_State *L, struct ref *seen);
-int __lua_json_render_lua_array(lua_State *L, struct ref *seen);
 int lua_json_parse_lua_object(lua_State *L, lua_parser *p);
 int lua_json_parse_lua_array(lua_State *L, lua_parser *p);
-int lua_json_tolua(lua_State *L);
 int lua_json_lua_table_len(lua_State *L);
-int lua_json_lua_is_mixed(lua_State *L);
 int lua_json_parse_lua(lua_State *L);
 
 #endif

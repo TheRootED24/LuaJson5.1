@@ -1,5 +1,4 @@
 #include "lua_json.h"
-const char *NULL_CACHE = NULL;
 
 #define DUMPSTACK 1
 
@@ -34,126 +33,22 @@ void dumpstack(lua_State *L, const char *msg)
 }
 #endif
 
-const char *Json[] = {
-    "\"%s\":",	     // JsonKey      0
-    "\"%s\":\"%s\"", // ObjString    1
-    "\"%s\":%f",     // ObjNumber    2
-    "\"%s\":%s",     // ObjBool      3
-    "\"%s\":%s",     // ObjNull      4
-    "\"%s\"",	     // ArrString    5
-    "%f",	     // ArrNumber    6
-    "%s",	     // ArrBool      7
-    "%s",	     // ArrNull      8
-    ",",	     // JsonNext     9
-    "{",	     // OpenObj      10
-    "}",	     // CloseObj     11
-    "[",	     // OpenArr      12
-    "]"		     // CloseArr     13
-};
+const char *NULL_CACHE = NULL;
 
+// may add more fields later
 const char *fields[] = {
-    "children",
     "ids",
-    "keys",
-    "klens",
-    "vlens",
-    "vtypes"
+    "keys"
 };
 
-/*int check_json_env(lua_State *L, bool align) {
-	// stack { env, ... }
-	if(lua_istable(L, 1)) {
-		json_elm *elm = NULL;
-		uintptr_t env_id = (uintptr_t)lua_topointer(L, 1);
-		lua_pushlightuserdata(L, (void *)env_id);
-		// stack { env, ..., env_id }
-		lua_rawget(L, LUA_REGISTRYINDEX);
-		// stack { env, ..., vtable }
-		lua_getfield(L, -1, "ctx");
-		// stack { env, ..., vtable, elm }
-		if (lua_isuserdata(L, -1))
-		{
-			elm = check_json_elm(L, -1);
-			// stack { env, ..., vtable, elm }
-			lua_replace(L, 1);
-			// stack { elm, ..., vtable}
-			lua_pop(L, 1);
-			// stack { elm, ... }
-			// correct index for proceeding 0-indexed calls
-			if (align)
-			{
-				// stack { elm, idx, .. }
-				elm->idx = lua_tointeger(L, 2);
-				lua_pushinteger(L, (elm->idx - 1));
-				// stack { elm, idx, val, (idx -1) }
-				lua_replace(L, 2);
-				// stack { elm, (idx-1), .. }
-			}
-			// stack { elm, (idx-1), .. }
-			return 1;
-		}
-		else 
-			luaL_error(L, "`lua env' expected, got %s\n", lua_typename(L, (lua_type(L, 1))));
-	}
 
-	return 0;
-}
-
+// strict type check and alignment 
 json_elm *check_json_elm(lua_State *L, int pos, bool align)
 {
 	// stack { elm || env, ... }
-	void *ud = NULL;
-	int idx_pos = (pos + 1);
-
-	if(lua_isuserdata(L, pos) ) {
-	
-		json_elm *elm = (json_elm*)lua_topointer(L, pos);
-		
-		if (!elm)
-		{ // if e is NULL force a lua error and bailout
-			ud = luaL_checkudata(L, pos, "JSON.json");
-			luaL_argcheck(L, ud != NULL, pos, "`json element' expected");
-		}
-
-		switch (elm->type)
-		{
-			case JSON_ARRAY_TYPE:
-			{
-				ud = luaL_checkudata(L, pos, "JSON.array");
-				luaL_argcheck(L, ud != NULL, pos, "`json array' expected");
-				break;
-			}
-			case JSON_OBJECT_TYPE:
-			{
-				ud = luaL_checkudata(L, pos, "JSON.object");
-				luaL_argcheck(L, ud != NULL, pos, "`json object' expected");
-				break;
-			}
-			default:
-			{
-				ud = luaL_checkudata(L, pos, "JSON.json");
-				luaL_argcheck(L, ud != NULL, pos, "`json element' expected");
-				break;
-			}
-		}
-
-		if(align && elm->align && lua_isnumber(L, (pos + 1))) {
-			elm->idx = (lua_tointeger(L, idx_pos) +1);
-		}
-
-		elm->align = true; 
-	}
-	
-	return (json_elm *)ud;
-};*/
-
-
-
-/*json_elm *check_json_elm(lua_State *L, int pos)
-{
-	// stack { elm || env, ... }
 	json_elm *e = NULL;
 	int idx_pos = (pos + 1);
+
 	if (lua_istable(L, pos))
 	{
 		pos = 1 ;
@@ -168,100 +63,7 @@ json_elm *check_json_elm(lua_State *L, int pos, bool align)
 		if (lua_isuserdata(L, -1))
 		{
 			e = (json_elm *)lua_topointer(L, -1);
-			// stack { env, ..., vtable, elm }
-			lua_replace(L, 1);
-			// stack { elm, ..., vtable}
-			lua_pop(L, 1);
-			// stack { elm, ... }
-			// correct index for proceeding 0-indexed calls
-			if (lua_isnumber(L, idx_pos))
-			{
-				if(e->type == JSON_ARRAY_TYPE)
-					idx_pos = 2;
-
-				// stack { elm, idx, .. }
-				e->idx = lua_tointeger(L, 2);
-				e->check_idx(e);
-				//if(!lua_isnil(L, -1)){
-					lua_pushinteger(L, (e->idx - 1));
-					// stack { elm, idx, .. (idx -1) }
-					lua_replace(L, 2);
-				//}
-				// stack { elm, idx-1, .. }
-			}
-			pos = 1;
-		}
-		else
-			luaL_error(L, "`json env' expected, got %s\n", lua_typename(L, (lua_type(L, pos))));
-	}
-	else
-	{
-		// stack { elm, ... }
-		e = (json_elm *)lua_topointer(L, pos);
-
-		if(e->type == JSON_ARRAY_TYPE) {
-			if(e->align && lua_isnumber(L, idx_pos))
-				e->idx = (lua_tointeger(L, idx_pos) + 1);
-			else
-				e->idx = lua_tointeger(L, idx_pos);
-
-			e->align = true;
-		}
-		else if(lua_isnumber(L, idx_pos))
-				e->idx = (lua_tointeger(L, idx_pos) + 1);
-	}	
-
-	void *ud = NULL;
-	if (!e)
-	{ // if e is NULL force a lua error and bailout
-		ud = luaL_checkudata(L, pos, "JSON.json");
-		luaL_argcheck(L, ud != NULL, pos, "`json element' expected");
-	}
-	switch (e->type)
-	{
-		case JSON_ARRAY_TYPE:
-		{
-			ud = luaL_checkudata(L, pos, "JSON.array");
-			luaL_argcheck(L, ud != NULL, pos, "`json array' expected");
-			break;
-		}
-		case JSON_OBJECT_TYPE:
-		{
-			ud = luaL_checkudata(L, pos, "JSON.object");
-			luaL_argcheck(L, ud != NULL, pos, "`json object' expected");
-			break;
-		}
-		default:
-		{
-			ud = luaL_checkudata(L, pos, "JSON.json");
-			luaL_argcheck(L, ud != NULL, pos, "`json element' expected");
-			break;
-		}
-	}
-
-	return (json_elm *)ud;
-};*/
-
-
-json_elm *check_json_elm2(lua_State *L, int pos, bool align)
-{
-	// stack { elm || env, ... }
-	json_elm *e = NULL;
-	int idx_pos = (pos + 1);
-	if (lua_istable(L, pos))
-	{
-		pos = 1 ;
-		idx_pos = 2;
-		uintptr_t env_id = (uintptr_t)lua_topointer(L, pos);
-		lua_pushlightuserdata(L, (void *)env_id);
-		// stack { env, ..., env_id }
-		lua_rawget(L, LUA_REGISTRYINDEX);
-		// stack { env, ..., vtable }
-		lua_getfield(L, -1, "ctx");
-		// stack { env, ..., vtable, elm }
-		if (lua_isuserdata(L, -1))
-		{
-			e = (json_elm *)lua_topointer(L, -1);
+			if(!e) luaL_error(L, "ERROR: check json elm error: Elm is NULL or corrupted !!");
 			// stack { env, ..., vtable, elm }
 			lua_replace(L, 1);
 			// stack { elm, ..., vtable}
@@ -272,7 +74,7 @@ json_elm *check_json_elm2(lua_State *L, int pos, bool align)
 			{
 				// stack { elm, idx, .. }
 				e->idx = lua_tointeger(L, 2);
-				e->check_idx(e);
+				e->opts->check_idx(e);
 
 				lua_pushinteger(L, (e->idx - (int)e->index_json));
 				// stack { elm, idx, .. (idx -1) }
@@ -292,7 +94,7 @@ json_elm *check_json_elm2(lua_State *L, int pos, bool align)
 		
 		//bool align = e->align ? e->align : false;
 		//printf("ALIGN: %s\n", btoa(e->align));
-		if(align){
+		if(e && align){
 			if(e->type == JSON_ARRAY_TYPE) {
 				if(e->align && lua_isnumber(L, idx_pos))
 					e->idx = (lua_tointeger(L, idx_pos) + (int)e->index_json);
@@ -337,14 +139,73 @@ json_elm *check_json_elm2(lua_State *L, int pos, bool align)
 	return (json_elm *)ud;
 };
 
+// check a ud's type
+static int lua_json_check_udata(lua_State *L, int arg, const char *tname) 
+{
+    void *p = lua_touserdata(L, arg);
+    
+    if (p != NULL) {
+        // 1. Push object's metatable
+        if (lua_getmetatable(L, arg)) {             
+            // Stack: [..., obj_mt]
+            
+            // 2. Push target metatable
+            luaL_getmetatable(L, tname);            
+            // Stack: [..., obj_mt, target_mt]
+            
+            // 3. Compare & Capture Result
+            int match = lua_rawequal(L, -1, -2);
+            
+            // 4. Clean Stack (MUST happen regardless of match)
+            lua_pop(L, 2); 
+            
+            // 5. Return the truth
+            return match; 
+        }
+    }
+    
+    return 0; // Not a userdata, or has no metatable
+}
+
+// dertermine if ud is an elm type ( used for nesting elms and ignoring non-elm uds )
+int lua_json_is_elm(lua_State *L, int pos)
+{
+    if (lua_json_check_udata(L, pos, "JSON.array"))  return 1;
+    if (lua_json_check_udata(L, pos, "JSON.object")) return 1;
+    if (lua_json_check_udata(L, pos, "JSON.json"))   return 1;
+
+    return 0;
+}
+
+typedef struct fake_ud {
+	bool is_fake;
+}fake;
+
+static fake* fake_ud(lua_State *L)
+{
+	void *ud = (fake*)lua_newuserdata(L, sizeof(fake));
+
+	lua_newtable(L);
+	lua_setmetatable(L, -2);
+
+	return (fake*)ud;
+}
+
+static int new_fake(lua_State *L) {
+	fake_ud(L);
+
+	return 1;
+}
+
 uint8_t type_of_index(json_elm *elm)
 {
 	if (elm->idx > (int)elm->nelms)
 		return NEW_INDEX;
-	else if (elm->is_nil)
-		elm->is_nil = false;
-	else
+		
+	if (!elm->is_nil)
 		return EXT_INDEX;
+	
+	elm->is_nil = false;	
 
 	return NIL_INDEX;
 }
@@ -355,7 +216,7 @@ void lua_json_elm_sub(json_elm *elm, json_elm *nested)
 	elm->event->sub(nested->event->on_change, elm, lua_json_elm_on_change);
 	elm->event->sub(nested->event->on_env, elm, lua_json_env_on_change);
 	if (DEBUG)
-		printf("Successfully Subbed Elm: %ld To Nested Elm: %ld\n", elm->id, nested->id);
+		printf("Successfully Subbed Elm: %ld To Nested Elm: %ld\n", elm->env_id, nested->env_id);
 }
 
 void lua_json_elm_unsub(json_elm *elm, json_elm *nested)
@@ -364,7 +225,7 @@ void lua_json_elm_unsub(json_elm *elm, json_elm *nested)
 	elm->event->unsub(nested->event->on_change, elm, lua_json_elm_on_change);
 	elm->event->unsub(nested->event->on_env, elm, lua_json_env_on_change);
 	if (DEBUG)
-		printf("Successfully Unsubbed Elm: %ld From Nested Elm: %ld\n", elm->id, nested->id);
+		printf("Successfully Unsubbed Elm: %ld From Nested Elm: %ld\n", elm->env_id, nested->env_id);
 }
 
 void lua_json_elm_on_newindex(void *ctx, event *ev)
@@ -440,7 +301,7 @@ void lua_json_elm_on_change(void *ctx, event *ev)
 }
 
 int lua_json_elm_is_stale(lua_State *L) {
-	json_elm *elm = check_json_elm2(L, 1, false);
+	json_elm *elm = check_json_elm(L, 1, false);
 	printf("elm->stale: %s", btoa(elm->stale));
 	return 0;
 }
@@ -484,7 +345,7 @@ void lua_json_elm_check_idx(json_elm *elm)
 		case JSON_ARRAY_TYPE:
 		{
 			if (elm->idx < 1 || elm->idx > (int)elm->nelms + 1)
-				luaL_error(elm->L, "Index %d is out of range\n", elm->idx);
+				luaL_error(elm->L, "ERROR: Index is out of bounds %d/%d\n", elm->idx, (int)elm->nelms+1);
 
 			break;
 		}
@@ -514,6 +375,53 @@ static bool null_str(json_elm *elm, elm_rlen *erl)
 	erl->is_exval ? erl->ex.quoted++
 		      : erl->new.quoted++;
 	return false;
+}
+
+static int lua_json_handle_table(lua_State *L) {
+	// stack { elm, t, ... }
+	int base = lua_gettop(L);
+	lua_State *L1 = lua_newthread(L);
+	// stack { elm, t, ...,  thread }
+	lua_pushcfunction(L1, lua_json_parse_lua);
+	// thread stack { parse_lua }
+	lua_pushvalue(L, -2);
+	// stack { elm, t, ...,  thread, t }
+	lua_xmove(L, L1, 1);
+	// thread stack { parse_lua, t }
+	if((bool)lua_resume(L1, 1)) 
+		luaL_error(L, "ERROR: failed to parse table !!");
+
+	lua_xmove(L1, L, 1);
+	lua_replace(L, base);
+	lua_settop(L, base);
+
+	return 0;
+}
+
+elm_vlen* lua_json_table_rlen(lua_State *L, elm_vlen *tbl_rlen) {
+
+	if(lua_istable(L, -1)) 
+	{
+		lua_pushvalue(L, -1);
+		lua_json_handle_table(L);
+		json_elm *elm = check_json_elm(L, -1, false);
+		tbl_rlen = elm->base;
+		lua_pop(L, 1);
+	}
+
+	return tbl_rlen;
+}
+
+
+static int print_table_rlen(lua_State *L) {
+	elm_vlen tlen = {0};
+
+	if(lua_istable(L, 1))
+		tlen = *lua_json_table_rlen(L, &tlen);
+
+	printf("Table rlen: %ld Table nkeys: %ld Table quoted: %ld\n", tlen.rlen, tlen.nkeys, tlen.quoted);
+	
+	return 0;
 }
 
 void update_rlen(json_elm *elm, elm_rlen *erl)
@@ -551,6 +459,9 @@ void update_rlen(json_elm *elm, elm_rlen *erl)
 	{
 		if (elm->vtype == LUA_TNIL)
 			luaL_error(elm->L, "JSON Error: Cannot assign 'nil' to a new key.");
+
+		if(elm->vtype == LUA_TTABLE)
+			elm->base->trefs++;
 
 		// NKEYS Logic: Handled in get_val_length2 via erl->base.nkeys++
 		elm->nelms++;
@@ -604,67 +515,12 @@ void update_rlen(json_elm *elm, elm_rlen *erl)
 	}
 }
 
-size_t lua_json_lua_elm_find_nil(lua_State *L, json_elm *elm) {
-	size_t size = 0;
-	// stack { elm , env }
-	if(lua_istable(L, -1)) {
-		switch(elm->type) {
-			case JSON_OBJECT_TYPE: {
-				for(size_t i = 1; i <= elm->nelms; i++ ) {
-					elm->idx = i;
-					bool ok = elm->idx_to_key(elm);
-					if(!ok) break;
-					lua_pushstring(L, elm->key);
-					// stack { elm , env, key }
-					lua_rawget(L, -2);
-					// stack { elm , env, key }
-					if(lua_isnil(L, -1)) break;
-					size++;
-
-					lua_pop(L, 1);
-				}
-
-				lua_pop(L, 1);
-				break;
-			}
-			case JSON_ARRAY_TYPE: {
-				
-				for(size_t i = 1; i <= elm->nelms; i++ ) {
-					lua_rawgeti(L, -1, i);
-					if(lua_isnil(L, -1)) break;
-					size++;
-
-					lua_pop(L, 1);
-				}
-
-				lua_pop(L, 1);
-				break;
-			}
-		}
-	}
-
-	return size;
-}
-
-int find_nil(lua_State *L) {
-	json_elm *elm = check_json_elm2(L, 1, false);
-	if(!lua_istable(L, -1))
-		get_json_table(L, 1);
-
-	size_t size = lua_json_lua_elm_find_nil(L, elm);
-	lua_pushnumber(L, size);
-
-	return 1;
-}
-
 void lua_json_elm_get_val_length(lua_State *L, json_elm *elm, elm_rlen *erl)
 {
 	bool obj = elm->type == JSON_OBJECT_TYPE;
-
 	// 1. TARGET SELECTION (Pointer Magic)
 	// direct access to the correct bucket. No memcpy needed later.
 	elm_vlen *target = !erl->is_exval ? &erl->new : &erl->ex;
-
 	// 2. RESOLVE TYPE
 	int vtype = !erl->is_exval ? (elm->vtype = lua_type(L, -1)) : erl->ex_vtype;
 
@@ -688,20 +544,37 @@ void lua_json_elm_get_val_length(lua_State *L, json_elm *elm, elm_rlen *erl)
 
 		erl->ex_vtype = lua_type(L, -1);
 
-		if (erl->ex_vtype == LUA_TUSERDATA)
+		if (erl->ex_vtype == LUA_TUSERDATA || erl->ex_vtype == LUA_TTABLE)
 		{
-			json_elm *nested = check_json_elm2(L, -1, false);
+			if(lua_istable(L, -1)){
+				elm_vlen *tlen = NULL;
+				tlen = lua_json_table_rlen(L, tlen);
 
-			if (nested)
-			{
-				// 1. Harvest the Body (The Child Object)
-				VLEN_ADD(erl->ex, *nested->base, NULL);
+				VLEN_ADD(erl->ex, *tlen, NULL);
 
-				// 2. THE FIX: Harvest the Wrapper (The Key + Punc)
+
 				// "key":  -> klen + 2 quotes + 1 colon = klen + 3
 				erl->ex.rlen += obj ? (elm->klen + 3) : 0;
 
-				erl->unsub = nested;
+				elm->base->trefs--;
+			}
+			else 
+			{
+				if(lua_json_is_elm(L, -1))
+				{
+					json_elm *nested = check_json_elm(L, -1, false);
+
+					if (nested)
+					{
+						// 1. Harvest the Body (The Child Object)
+						VLEN_ADD(erl->ex, *nested->base, NULL);
+
+						// "key":  -> klen + 2 quotes + 1 colon = klen + 3
+						erl->ex.rlen += obj ? (elm->klen + 3) : 0;
+
+						erl->unsub = nested;
+					}
+				}
 			}
 		}
 		else
@@ -731,19 +604,35 @@ void lua_json_elm_get_val_length(lua_State *L, json_elm *elm, elm_rlen *erl)
 	{
 		case LUA_TUSERDATA:
 		{
-			json_elm *nested = check_json_elm2(L, -1, false);
-			target->rlen += obj ? (elm->klen + 3) : 0;
+			if(lua_json_is_elm(L, -1))
+			{
+				json_elm *nested = check_json_elm(L, -1, false);
+				target->rlen += obj ? (elm->klen + 3) : 0;
+				
+				if (!erl->is_exval) 
+					erl->sub = nested;
+				else
+					erl->unsub = nested;
 
-			if (!erl->is_exval)
-				erl->sub = nested;
-			else
-				erl->unsub = nested;
+				// Add nested stats directly to target
+				VLEN_ADD(*target, *nested->base, NULL);
+			}
 
-			// Add nested stats directly to target
-			VLEN_ADD(*target, *nested->base, NULL);
 			break;
 		}
 
+		case LUA_TTABLE:
+		{
+			target->rlen += obj ? (elm->klen + 3) : 0;
+			elm_vlen *tlen = NULL;
+			tlen = lua_json_table_rlen(L, tlen);
+
+			if(tlen)
+				VLEN_ADD(*target, *tlen, NULL);
+
+			break;
+		}
+		
 		case LUA_TNUMBER:
 		{
 			lua_pushvalue(L, -1);
@@ -775,11 +664,14 @@ void lua_json_elm_get_val_length(lua_State *L, json_elm *elm, elm_rlen *erl)
 		case LUA_TNIL:
 		{
 			if (erl->is_exval)
-			{
+			{	
+				if(lua_type(L, -3) == LUA_TTABLE)
+					elm->base->trefs--;
+
 				if(obj) {
 					// stack { elm, key, val, env, nil }
 					lua_pushvalue(L, 2);
-					elm->key_to_idx(elm, true);
+					elm->opts->key_to_idx(elm, true);
 					// stack { elm, key, val, env, nil, key }
 					lua_replace(L, -2);
 					// stack { elm, key, val, env, key }
@@ -810,8 +702,6 @@ void lua_json_elm_get_val_length(lua_State *L, json_elm *elm, elm_rlen *erl)
 		}
 	}
 
-	// NO MEMCPY NEEDED.
-	// We wrote directly to erl->new or erl->ex via *target.
 }
 
 bool lua_json_elm_contains(lua_State *L, json_elm *elm, json_elm *nested)
@@ -875,11 +765,12 @@ bool lua_json_elm_contains(lua_State *L, json_elm *elm, json_elm *nested)
 size_t __lua_json_elm_get_rlen(json_elm *elm, int mode, bool esc)
 {
 	size_t rlen = 0;
+
 	switch (mode)
 	{
 	case MARSHAL_JSON:
 		rlen += esc ? (elm->base->rlen + (elm->base->quoted * 2) + (elm->base->nkeys * 2))
-			    : (elm->base->rlen)+1;
+			    : (elm->base->rlen);
 		break;
 
 	case MARSHAL_LUA:
@@ -893,7 +784,7 @@ size_t __lua_json_elm_get_rlen(json_elm *elm, int mode, bool esc)
 
 int lua_json_elm_get_rlen(lua_State *L)
 {
-	json_elm *elm = check_json_elm2(L, 1, false);
+	json_elm *elm = check_json_elm(L, 1, false);
 	int rtype = luaL_checkinteger(L, 2);
 	bool esc = lua_isboolean(L, 3) ? lua_toboolean(L, 3) : false;
 
@@ -902,91 +793,6 @@ int lua_json_elm_get_rlen(lua_State *L)
 	lua_pushnumber(L, rlen);
 
 	return 1;
-}
-
-int lua_json_elm_get_quoted(lua_State *L)
-{
-	json_elm *elm = check_json_elm2(L, 1, false);
-	lua_pushnumber(L, elm->base->quoted);
-	return 1;
-}
-
-int lua_json_elm_get_nkeys(lua_State *L)
-{
-	json_elm *elm = check_json_elm2(L, 1, false);
-	lua_pushnumber(L, elm->base->nkeys);
-	return 1;
-}
-
-int lua_json_elm_get_props(lua_State *L)
-{
-	json_elm *elm = check_json_elm2(L, 1, false);
-	lua_pushlightuserdata(L, (void *)elm->env_id);
-	lua_rawget(L, LUA_REGISTRYINDEX);
-	lua_getfield(L, -1, "props");
-
-	lua_replace(L, 1);
-	lua_pop(L, 1);
-
-	return 1;
-}
-
-int lua_json_elm_env_get(lua_State *L, json_elm *elm, int idx, env_field field)
-{
-	lua_pushlightuserdata(L, (void *)elm->env_id);
-	lua_rawget(L, LUA_REGISTRYINDEX);
-	lua_getfield(L, -1, fields[field]);
-
-	// ... bounds check ...
-	if (idx < 1 || idx > (int)elm->nelms + 1)
-	{
-		fprintf(stderr, "Insert Id Index %d is out of range\n", idx);
-
-		return 0;
-	}
-
-	lua_rawgeti(L, -1, idx); // Target at -1
-
-	// THE FIX: Move the target to the position of the vtable and pop the rest
-	lua_replace(L, -3); // Puts Result where VTable was
-	lua_pop(L, 1);	    // Pops the Field Table
-
-	return 1; // Now only the Result is left on the stack above the inputs
-}
-
-int lua_json_elm_print_ids(lua_State *L)
-{
-	json_elm *elm = check_json_elm2(L, 1, false);
-	// stack { elm }
-	lua_pushlightuserdata(L, (void *)elm->env_id);
-	// stack { elm, env_id }
-	lua_rawget(L, LUA_REGISTRYINDEX);
-	// stack { elm, vtable }
-	lua_getfield(L, -1, "ids");
-	// stack { elm, vtable, ids }
-	lua_pushnil(L);
-
-	while (lua_next(L, -2) != 0)
-	{
-		if (lua_isnumber(L, -2))
-			printf("id: %ld = %s\n", lua_tointeger(L, -2), btoa(lua_toboolean(L, -2)));
-
-		lua_pop(L, 1);
-	}
-	lua_pop(L, 3);
-
-	return 0;
-}
-
-int lua_json_elm_env_getr(lua_State *L)
-{
-	json_elm *elm = check_json_elm2(L, 1, false);
-
-	int idx = luaL_checkinteger(L, 2);
-	env_field field = luaL_checkinteger(L, 3);
-	lua_json_elm_env_get(L, elm, idx, field);
-
-	return 1; //
 }
 
 int lua_json_elm_env_add(lua_State *L, json_elm *elm, env_val *val, env_field field)
@@ -1001,29 +807,30 @@ int lua_json_elm_env_add(lua_State *L, json_elm *elm, env_val *val, env_field fi
 
 	switch (field)
 	{
-	case keys:
-	{
-		// stack { ..., vtable, keys }
-		lua_pushstring(L, val->key);
-		// stack { ..., vtable, keys, key }
-		lua_rawseti(L, -2, size + 1);
-		// stack { ..., vtable, keys }
-		break;
-	}
+		case keys:
+		{
+			// stack { ..., vtable, keys }
+			lua_pushstring(L, val->key);
+			// stack { ..., vtable, keys, key }
+			lua_rawseti(L, -2, size + 1);
+			// stack { ..., vtable, keys }
+			break;
+		}
 
-	case ids:
-	{
-		// stack { ..., vtable, ids }
-		lua_pushinteger(L, val->env_id);
-		// stack { ..., vtable, ids, id }
-		lua_pushboolean(L, 1);
-		// stack { ..., vtable, ids, id, true }
-		lua_rawset(L, -3);
-		// stack { ..., vtable, ids }
-		break;
-	}
-	default:
-		break;
+		case ids:
+		{
+			// stack { ..., vtable, ids }
+			lua_pushinteger(L, val->env_id);
+			// stack { ..., vtable, ids, id }
+			lua_pushboolean(L, 1);
+			// stack { ..., vtable, ids, id, true }
+			lua_rawset(L, -3);
+			// stack { ..., vtable, ids }
+			break;
+		}
+
+		default:
+			break;
 	}
 	// stack { ..., vtable, ids||keys }
 	lua_pop(L, 2);
@@ -1040,34 +847,11 @@ int lua_json_elm_env_add(lua_State *L, json_elm *elm, env_val *val, env_field fi
 	return 0;
 }
 
-int lua_json_elm_env_addr(lua_State *L)
-{
-	json_elm *elm = check_json_elm2(L, 1, false);
-	env_val val = {0};
-	// bool is_num = false;
-	if (lua_isnumber(L, 2))
-	{
-		val.env_id = lua_tointeger(L, 2);
-		// is_num = true;
-	}
-	else
-		val.key = luaL_checkstring(L, 2);
-
-	env_field field = luaL_checkinteger(L, 3);
-
-	if (DEBUG)
-		field != keys ? printf("\n\nEnv Add --> elm: %ld val: %d field: %s\n\n", elm->id, val.num, fields[field])
-			      : printf("\n\nEnv Add --> elm: %ld val: %s field: %s\n\n", elm->id, val.key, fields[field]);
-
-	lua_json_elm_env_add(L, elm, &val, field);
-
-	return 0;
-}
 
 int lua_json_elm_to_table(lua_State *L)
 {
 	// 1. Retrieve the Userdata
-	json_elm *elm = check_json_elm2(L, 1, false);
+	json_elm *elm = check_json_elm(L, 1, false);
 
 	// 2. SAVE STATE (Critical)
 	// We are about to change the mode to LUA for generation.
@@ -1081,8 +865,8 @@ int lua_json_elm_to_table(lua_State *L)
 	elm->escape = false; // Standard Lua tables don't need extra escaping usually
 
 	// 4. Generate the String
-	// Calls your existing logic. Pushes string to Stack[-1]
-	elm->stringify(L);
+	// Pushes string to Stack[-1]
+	elm->opts->stringify(L);
 
 	// 5. RESTORE STATE
 	elm->mode = original_mode;
@@ -1098,7 +882,7 @@ int lua_json_elm_to_table(lua_State *L)
 	// Parses the string into a Bytecode Chunk (Function)
 	if (luaL_loadstring(L, lua_tostring(L, -1)) != 0)
 	{
-		// If your stringify logic is perfect, this should never happen.
+		// If stringify logic is perfect, this should never happen.
 		return lua_error(L);
 	}
 
@@ -1143,32 +927,6 @@ int lua_json_elm_env_insert(lua_State *L, json_elm *elm, int idx, env_val *val, 
 	return 0;
 }
 
-int lua_json_elm_env_insertr(lua_State *L)
-{
-	json_elm *elm = check_json_elm2(L, 1, false);
-	int idx = luaL_checkinteger(L, 2);
-	env_val val = {0};
-	// bool is_num = false;
-
-	if (lua_isnumber(L, 3))
-	{
-		val.num = lua_tonumber(L, 3);
-		// is_num = true;
-	}
-	else
-		val.key = luaL_checkstring(L, 3);
-
-	env_field field = luaL_checkinteger(L, 4);
-
-	if (DEBUG)
-		field != keys ? printf("\n\nEnv Insert --> elm: %ld val: %d field: %s\n\n", elm->id, val.num, fields[field])
-			      : printf("\n\nEnv Insert --> elm: %ld val: %s field: %s\n\n", elm->id, val.key, fields[field]);
-
-	lua_json_elm_env_insert(L, elm, idx, &val, field);
-
-	return 0; //
-}
-
 int lua_json_elm_env_rem(lua_State *L, json_elm *elm, uintptr_t env_id, env_field field)
 {
 	// stack {..., elm }
@@ -1207,69 +965,6 @@ int lua_json_elm_env_rem(lua_State *L, json_elm *elm, uintptr_t env_id, env_fiel
 	return 0;
 }
 
-int lua_json_elm_env_remover(lua_State *L)
-{
-	json_elm *elm = check_json_elm2(L, 1, false);
-	int idx = luaL_checkinteger(L, 2);
-	env_field field = luaL_checkinteger(L, 3);
-
-	if (DEBUG)
-		printf("\n\nEnv Remove --> elm: %ld val: %d field: %s\n\n", elm->id, idx, fields[field]);
-	lua_json_elm_env_rem(L, elm, idx, field);
-
-	return 0; //
-}
-
-int L_json_elm_bind_dom(lua_State *L)
-{
-	// stack { elm, id_str}
-	json_elm *self = check_json_elm2(L, 1, false);
-	const char *id_str = luaL_checkstring(L, 2);
-
-	// 1. Update the C-Struct for raw speed
-	// if (self->dom_id) free(self->dom_id);
-	self->dom_id = id_str;
-
-	// 3. Force it into Index 0 of the 'dom_ids' table
-	// We use a custom version of env_add or a manual set to hit index 0
-
-	lua_rawgeti(L, LUA_REGISTRYINDEX, self->env_id);
-	// stack { elm, id_str, vtable }
-	lua_getfield(L, -1, "props");
-	// stack { elm, id_str, vtable, dom_ids }
-	lua_pushvalue(L, 2);
-	// stack { elm, id_str, vtable, dom_ids, id_str }
-	lua_setfield(L, -2, "dom_id");
-	// lua_rawseti(L, -2, 0);
-	//  stack { elm, id_str, vtable, dom_ids }
-	lua_pop(L, 2);
-	// stack { elm, id_str }
-
-	return 0;
-}
-
-static int l_strip_all(lua_State *L)
-{
-	size_t len;
-	const char *s = luaL_checklstring(L, -1, &len);
-	// Create a temporary buffer on the C stack (or use luaL_Buffer)
-	luaL_Buffer b;
-	luaL_buffinit(L, &b);
-
-	for (size_t i = 0; i < len; i++)
-	{
-		if (!isspace((unsigned char)s[i]))
-		{
-			luaL_addchar(&b, s[i]);
-		}
-	}
-	lua_pop(L, 1);
-
-	luaL_pushresult(&b);
-
-	return 1;
-}
-
 char *trim_const_char(const char *s)
 {
 	if (s == NULL)
@@ -1280,15 +975,11 @@ char *trim_const_char(const char *s)
 
 	// Move start pointer forward past whitespace
 	while (*start && isspace((unsigned char)*start))
-	{
 		start++;
-	}
 
 	// Move end pointer backward past whitespace
 	while (end > start && isspace((unsigned char)*end))
-	{
 		end--;
-	}
 
 	// Calculate length of the trimmed string
 	size_t len = (start <= end) ? (size_t)(end - start + 1) : 0;
@@ -1304,158 +995,115 @@ char *trim_const_char(const char *s)
 	return trimmed;
 }
 
+int lua_json_elm_get_quoted(lua_State *L)
+{
+	json_elm *elm = check_json_elm(L, 1, false);
+	lua_pushnumber(L, elm->base->quoted);
+	return 1;
+}
+
+int lua_json_elm_get_nkeys(lua_State *L)
+{
+	json_elm *elm = check_json_elm(L, 1, false);
+	lua_pushnumber(L, elm->base->nkeys);
+	return 1;
+}
+
 int lua_json_elm_stringify(lua_State *L)
 {
-	json_elm *elm = check_json_elm2(L, 1, false);
+	json_elm *elm = check_json_elm(L, 1, false);
 	ref seen = {0};
-	seen.elm = elm;
-	seen.max = 1;
-	seen.depth = 0;
 	seen.marshal = lua_json_marshall_new(L);
-	seen.root = seen.last = elm->env_id;
-	size_t esc_len = ((elm->base->quoted * 2) + (elm->base->nkeys * 2));
-	size_t lua_len = (elm->base->nkeys * 2);
-	// seen.check_next = &check_next;
 	seen.mode = elm->mode ? elm->mode : MARSHAL_JSON;
 	seen.escape = elm->escape ? elm->escape : false;
 	seen.Marshal = elm->mode == MARSHAL_JSON ? marshal_json : marshal_lua;
-	seen.rlen = __lua_json_elm_get_rlen(elm, elm->mode, elm->escape) + 256; // add 256 byte cushion
-	///seen.rlen = (int)seen.rlen > 0 ? seen.rlen : (elm->base->rlen * 2);
-	seen.ltype = LUA_TUSERDATA;
-	
-	// start the global seen_ids table
-	// Determine if a second lua_State is required  
-	bool need_state = ((seen.rlen + elm->nelms) > 1024) ? true : false;
+	seen.rlen = __lua_json_elm_get_rlen(elm, elm->mode, elm->escape); // add 256 byte cushion
+
+	// Determine if a second lua_State is required
+	// add a libreral 1/2 elm size to rlen in case the elm is very stale
+	bool need_state = ((seen.rlen + (seen.rlen / 2)) > 1024) ? true : false;
 	seen.ML = need_state ? luaL_newstate() : L;
+
 	luaL_Buffer b;
-    luaL_buffinit(seen.ML, &b); // Bind Buffer to the Target State (ML)
-    seen.B = &b;                // Store pointer in struct
+	luaL_buffinit(seen.ML, &b); // Bind Buffer to the Target State (ML)
+	seen.B = &b;                // Store pointer in struct
 
-	//seen.b = malloc(seen.rlen + 1);
-	//seen.b[0] = '\0'; // Start with an empty string
+	elm->opts->render(L, &seen);
 
-	/*// start the global seen_ids table
-	lua_newtable(L); // --seen_ids
-	// stack { ..., seen_ids }
-	lua_pushinteger(L, elm->env_id);
-	// stack { ..., seen_ids, env_id }
-	lua_pushboolean(L, true);
-	// stack { ..., seen_ids, env_id, true }
-	lua_rawset(L, -3); // --> seen_ids{ ..., env_id=true }
-	// stack { ..., seen_ids }
-	seen.ids = luaL_ref(L, LUA_REGISTRYINDEX);*/
-
-	elm->render(L, &seen);
 	luaL_pushresult(seen.B);
-	
-	//seen.b = lua_tolstring(L, -1, &lt);
-	// elm->base->rlen += lt + 1;
-	//lua_pushlstring(L, seen.b, lt);
-	//free(seen.b);
 	free(seen.marshal);
+	const char *res = NULL;
 
-	if (need_state) {
-		lua_xmove(seen.ML, L, 1); // Move result from ML to L
+	if (need_state && seen.ML) {
+		res = lua_tolstring(seen.ML, -1, &seen.rlen);
+		lua_pushlstring(L, res, seen.rlen);
 		lua_close(seen.ML);       // Destroy the sandbox
     	}
-
+	else
+		lua_tolstring(L, -1, &seen.rlen);
 	
-	lua_tolstring(L, -1, &seen.rlen);
-
-
-
-	// free the ids
-	// luaL_unref(L, LUA_REGISTRYINDEX, seen.ids);
-	if(seen.escape)
-		seen.rlen -= esc_len;
-
-	if(seen.mode == MARSHAL_LUA)
-		seen.rlen += lua_len;
-
-	if(elm->stale) elm->base->rlen = seen.rlen-1;
+	/* Re-sync Rlen if its free */
 	elm->base->nkeys = seen.nkeys;
 	elm->base->quoted = seen.quoted;
-	//elm->base->rlen =  __lua_json_elm_get_rlen(elm, MARSHAL_JSON, false)-1;
+	elm->base->trefs = seen.has_refs;
+
+	size_t esc_len = (elm->base->quoted * 2);
+	size_t lua_len = (elm->base->nkeys * 2);
+
+	if(DEBUG > 1) printf("SEEN ESCAPE: %s SEEN MODE: %s\nSEEN NKEYS: %ld SEEN QUOTED: %ld SEEN TREFS: %ld\n", seen.escape ? "true" : "false", seen.mode == MARSHAL_JSON ? "json" : "lua",
+										    seen.nkeys, seen.quoted, seen.has_refs);
+	if(seen.escape)
+		seen.rlen -= seen.mode == MARSHAL_LUA ? (esc_len - lua_len) : (esc_len + lua_len);
+		
+	if( !seen.escape && seen.mode == MARSHAL_LUA )
+		seen.rlen += lua_len;
+
+	elm->base->rlen = seen.rlen;
+	elm->stale = false;
 
 	if (!DEBUG)
 	{
 		printf("\n\n########### result ###########\n\n");
 		printf("mode: %s\nescape: %s\n", elm->mode == MARSHAL_JSON ? "json" : "lua", btoa(elm->escape));
-		printf("marhsaled len: %ld\nrender len: %ld\n", __lua_json_elm_get_rlen(elm, elm->mode, elm->escape)-1,  __lua_json_elm_get_rlen(elm, elm->mode, elm->escape));
-		printf("\n########### %ld/%ld ###########\n\n", __lua_json_elm_get_rlen(elm, elm->mode, elm->escape)-1,  __lua_json_elm_get_rlen(elm, elm->mode, elm->escape));
+		printf("marhsaled len: %ld\nrender len: %ld\n", __lua_json_elm_get_rlen(elm, elm->mode, elm->escape),  __lua_json_elm_get_rlen(elm, elm->mode, elm->escape)+1);
+		printf("\n########### %ld/%ld ###########\n\n", __lua_json_elm_get_rlen(elm, elm->mode, elm->escape),  __lua_json_elm_get_rlen(elm, elm->mode, elm->escape)+1);
 
 		printf("JSON C_STR MARSHAL LENGTH:\t%ld\nLUA C_STR MARSHAL LENGTH:\t%ld\nLUA MARSHAL LENGTH:\t\t%ld\nJSON MARSHAL LENGTH:\t\t%ld\n\n",
 		       __lua_json_elm_get_rlen(elm, MARSHAL_JSON, true),
 		       __lua_json_elm_get_rlen(elm, MARSHAL_LUA, true) ,
 		       __lua_json_elm_get_rlen(elm, MARSHAL_LUA, false),
-		       __lua_json_elm_get_rlen(elm, MARSHAL_JSON, false) - 1);
+		       __lua_json_elm_get_rlen(elm, MARSHAL_JSON, false));
 	}
-
-	/*if(seen.escape)
-		seen.rlen -= esc_len;
-
-	if(seen.mode == MARSHAL_LUA)
-		seen.rlen += lua_len;
-
-	elm->base->rlen = seen.rlen;*/
-	elm->stale = false;
-
+	
 	return 1;
 };
 
-/*bool check_next(lua_State *L, ref *seen, uintptr_t next) {
-
-	if(next == seen->root || next == seen->last) return true;
-	//printf("ELM: %ld <<====>> Nested: %ld\n", seen->root, next);
-	// stack { ... }
-	lua_rawgeti(L, LUA_REGISTRYINDEX, seen->ids);
-	// stack { ...,  seen->ids }
-	lua_pushinteger(L, next);
-	// stack { ...,  seen->ids, next }
-	lua_rawget(L, -2);
-	// stack { ..., seen->ids, result_bool }
-
-	if(lua_toboolean(L, -1) == 1) {
-		// WE'VE SEEN IT
-		// stack { ..., seen->ids, true }
-		lua_pop(L, 2);
-		// stack { ... }
-		return true;
-	}
-
-	// ADD IT
-	// stack { ..., seen->ids, false }
-	lua_pop(L, 1);
-	// stack { ...,  seen->ids }
-	lua_pushinteger(L, next);
-	// stack { ..., seen_ids, env_id }
-	lua_pushboolean(L, true);
-	// stack { ..., seen_ids, env_id, true }
-	lua_rawset(L, -3); // --> seen_ids{ ..., env_id=true }
-	// stack { ..., seen_ids }
-	lua_pop(L, 1);
-	// stack { ... }
-	seen->last = next;
-
-	return false;
-};*/
-
 int lua_json_elm_tostring(lua_State *L)
 {
-	json_elm *elm = check_json_elm2(L, 1, false);
+	json_elm *elm = check_json_elm(L, 1, false);
 		lua_pushfstring(L, "%s: %p", elm->typename, elm->env_id);
 
 	return 1;
 };
 
+int lua_json_elm_print_refs(lua_State *L) {
+	json_elm *elm = check_json_elm(L, 1, false);
+
+	printf("ELM REFS: %ld\n", elm->base->trefs);
+
+	return 0;
+}
+
 int lua_json_elm_len(lua_State *L)
 {
-	json_elm *elm = check_json_elm2(L, 1, false);
+	json_elm *elm = check_json_elm(L, 1, false);
 
-	if(elm->stale) {
+	if(elm->stale || elm->base->trefs > 0) {
 		uint8_t tmode = elm->mode;
 		elm->mode = MARSHAL_JSON;
-		elm->stringify(L);
+
+		elm->opts->stringify(L);
+
 		lua_settop(L, 1);
 		elm->mode = tmode;
 	}
@@ -1467,248 +1115,112 @@ int lua_json_elm_len(lua_State *L)
 
 int lua_json_elm_size(lua_State *L)
 {
-	json_elm *elm = check_json_elm2(L, 1, false);
+	json_elm *elm = check_json_elm(L, 1, false);
 	lua_pushinteger(L, elm->nelms);
 
 	return 1;
 };
 
-void json_type(parse_elm *elm)
+static int push_number(lua_State *L, struct mg_str *val)
 {
-	const char index = elm->index;
-	if (index == '{')
-	{
-		elm->type = JSON_OBJECT_TYPE;
-		return;
-	}
-	if (index == '[')
-	{
-		elm->type = JSON_ARRAY_TYPE;
-		return;
-	}
+    // 1. Stack Buffer (Avoids Malloc)
+    // We must copy to stack to append the \0 terminator for strtod
+    char tmp[64]; 
+    int copy_len = val->len < 63 ? val->len : 63;
+    
+    memcpy(tmp, val->buf, copy_len);
+    tmp[copy_len] = '\0'; 
+    
+    // 2. Parse & Push
+    char *end;
+    lua_pushnumber(L, strtod(tmp, &end)); 
 
-	bool isLong = ((elm->l = mg_json_get_long(*elm->json, elm->key, -1)) == -1) ? false : true;
-	bool isStr = ((elm->str = mg_json_get_str(*elm->json, elm->key)) == NULL) ? false : true;
-	bool isNum = mg_json_get_num(*elm->json, elm->key, &elm->num);
-	bool isBool = mg_json_get_bool(*elm->json, elm->key, &elm->b);
+    return 1; 
+}
 
-	if (isNum)
-		elm->type = JSON_NUMBER_TYPE;
-	else if (isStr)
-		elm->type = JSON_STRING_TYPE;
-	else if (isBool)
-		elm->type = JSON_BOOL_TYPE;
-	else if (isLong)
-		elm->type = JSON_LONG_TYPE;
-	else
-		elm->type = JSON_NULL_TYPE;
-
-	return;
-};
-
-bool _isRoot = true;
+static int detect_type(struct mg_str *json) {
+    switch (json->buf[0]) {
+        case '{': return JSON_OBJECT_TYPE;
+        case '[': return JSON_ARRAY_TYPE;
+        case '"': return JSON_STRING_TYPE;
+        case 't': return JSON_BOOL_TYPE;  // 't'rue
+        case 'f': return JSON_BOOL_TYPE;  // 'f'alse
+        case 'n': return JSON_NULL_TYPE;  // 'n'ull
+        case '-': 
+        case '0' ... '9': return JSON_NUMBER_TYPE;
+        default: return JSON_INVALID_TYPE;
+    }
+}
 
 static int __lua_json_elm_parse(lua_State *L, struct mg_str json, int depth)
 {
-	_isRoot = depth == -1 ? true : false;
-	json_elm *jelm = check_json_elm2(L, -1, false);
-	// stack {..., env }
-	parse_elm elm = {0};
-	int idx = 0;
-	int n = 0, o = mg_json_get(json, "$", &n);
-	if (_isRoot)
-		jelm->plen = n;
-	if (json.buf[o] == '{' || json.buf[o] == '[')
-	{
-		struct mg_str key, val, sub = mg_str_n(json.buf + o, (size_t)n);
-		size_t ofs = 0;
-		while ((ofs = mg_json_next(sub, ofs, &key, &val)) > 0)
-		{
-			bool isKeyed = key.len > 0 ? true : false;
-			elm.isRoot = _isRoot;
-			if (elm.isRoot)
-				depth = 1;
+    bool isRoot = (depth == -1);
+    //json_elm *jelm = check_json_elm(L, -1, false);
+    
+    int idx = 0;
+    int n = 0;
+    int o = mg_json_get(json, "$", &n);
+    
+    if (isRoot) depth = 1; // Normalize depth for the first pass
 
-			elm.index = val.buf[0];
 
-			if (isKeyed)
-			{
-				key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
-				elm.key = lua_pushfstring(L, "$.%s", lua_tostring(L, -1));
-				lua_pop(L, 2);
+    if (json.buf[o] == '{' || json.buf[o] == '[')
+    {
+        struct mg_str key, val, sub = mg_str_n(json.buf + o, (size_t)n);
+        size_t ofs = 0;
 
-				elm.json = &json;
-				json_type(&elm);
-			}
-			else
-			{
-				// construct a json object with a dummy key and the value to check type
-				lua_pushlstring(L, val.buf, (int)val.len);
-				const char *buf = lua_pushfstring(L, "{\"%s\": %s}", "dkey", lua_tostring(L, -1));
-				lua_pop(L, 2);
+        while ((ofs = mg_json_next(sub, ofs, &key, &val)) > 0)
+        {
+            bool isKeyed = (key.len > 0);
 
-				struct mg_str djson = mg_str(buf);
-				elm.json = &djson;
-				elm.key = "$.dkey";
-				json_type(&elm);
-			}
-	
-			switch (elm.type)
-			{
-				case JSON_NUMBER_TYPE:
-				{
-					if (isKeyed)
-					{
-						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
-						lua_pushnumber(L, elm.num);
-					}
-					else
-					{
-						lua_pushnumber(L, idx++);
-						lua_pushnumber(L, elm.num);
-					}
+            // 1. Prepare Key or Index
+            if (isKeyed)
+                (key.buf[0] == '"') ? lua_pushlstring(L, key.buf + 1, key.len - 2) 
+                                    : lua_pushlstring(L, key.buf, key.len);
+            else 
+                lua_pushnumber(L, idx++);
+            
 
-					lua_settable(L, -3);
-					break;
-				}
-				case JSON_BOOL_TYPE:
-				{
-					if (isKeyed)
-					{
-						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
-						lua_pushboolean(L, elm.b);
-					}
-					else
-					{
-						lua_pushnumber(L, idx++);
-						lua_pushboolean(L, elm.b);
-					}
+            // 2. Handle Values (Primitives or Container Starts)
+            uint8_t type = (uint8_t)detect_type(&val);
+            switch (type)
+            {
+                case JSON_NUMBER_TYPE:
+                    push_number(L, &val);
+                    break;
+                case JSON_BOOL_TYPE:
+                    lua_pushboolean(L, *val.buf == 't');
+                    break;
+                case JSON_STRING_TYPE:
+                    lua_pushlstring(L, val.buf + 1, val.len - 2);
+                    break;
+                case JSON_NULL_TYPE:
+                    lua_pushlstring(L, val.buf, val.len);
+                    break;
+                case JSON_ARRAY_TYPE:
+                    lua_json_elm_parse_array(L); // Pushes new table for array
+                    break;
+                case JSON_OBJECT_TYPE:
+                    lua_json_elm_parse_object(L); // Pushes new table for object
+                    break;
+            }
 
-					lua_settable(L, -3);
-					break;
-				}
-				case JSON_LONG_TYPE:
-				{
-					if (isKeyed)
-					{
-						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
-						lua_pushnumber(L, elm.l);
-					}
-					else
-					{
-						lua_pushnumber(L, idx++);
-						lua_pushnumber(L, elm.l);
-					}
+            // 3. If nested, fill the table we just pushed in step 2
+            if (*val.buf == '[' || *val.buf == '{') {
+                // Recursion: The new table is at -1, parent env is at -3
+                __lua_json_elm_parse(L, val, depth + 1);
+            }
 
-					lua_settable(L, -3);
-					break;
-				}
-				case JSON_STRING_TYPE:
-				{
-					if (isKeyed)
-					{
-						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
-						lua_pushstring(L, elm.str);
-					}
-					else
-					{
-						lua_pushnumber(L, idx++);
-						lua_pushstring(L, elm.str);
-					}
-					lua_settable(L, -3);
-					free(elm.str);
-					break;
-				}
-				case JSON_NULL_TYPE:
-				{
-					if (isKeyed)
-					{
-						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
-						lua_pushlstring(L, val.buf, val.len);
-					}
-					else
-					{
-						lua_pushnumber(L, idx++);
-						lua_pushlstring(L, val.buf, val.len);
-					}
-					lua_settable(L, -3);
-					free(elm.str);
-					break;
-				}
-				case JSON_ARRAY_TYPE:
-				{
-					if (isKeyed)
-					{
-						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
-						lua_json_elm_parse_array(L);
-					}
-					else
-					{
-						lua_pushnumber(L, idx++);
-						lua_json_elm_parse_array(L);
-					}
+            // 4. Finalize: Set the value (primitive or filled table) into parent env
+            // Stack is: [elm, key, value]
+	    if(lua_isuserdata(L, -3))
+            	lua_settable(L, -3);
+        }
+    }
 
-					break;
-				}
-				case JSON_OBJECT_TYPE:
-				{
-					if (isKeyed)
-					{
-						key.buf[0] == '"' ? lua_pushlstring(L, key.buf + 1, key.len - 2) : lua_pushlstring(L, key.buf, key.len);
-						lua_json_elm_parse_object(L);
-					}
-					else
-					{
-						lua_pushnumber(L, idx++);
-						lua_json_elm_parse_object(L);
-					}
-					break;
-				}
-				break;
-			}
-
-			// found nested object or array
-			if (*val.buf == '[' || *val.buf == '{')
-			{
-				switch (*val.buf)
-				{
-				case '[':
-				{
-					break;
-				}
-				case '{':
-				{
-					break;
-				}
-				}
-				__lua_json_elm_parse(L, val, depth += 1);
-			}
-			// found the end of the current object / array
-			char last = json.buf[ofs];
-			if (last == ']' || last == '}')
-			{
-
-				// we're finished parsing when stack size is 1
-				bool finished = lua_gettop(L) == 1 ? true : false;
-
-				if (!finished)
-				{
-					lua_settable(L, -3);
-					depth -= 1;
-					idx = 0;
-				}
-			}
-		}
-	}
-
-	// all done!! leave the table on the stack and return it
-	if (depth == 1)
-	{
-		return 1;
-	}
-	// recursion
-	return 0;
-};
+    // All done! If we are back at the start, return the final result
+    return (depth == 1) ? 1 : 0;
+}
 
 int lua_json_elm_parse(lua_State *L)
 {
@@ -1736,7 +1248,7 @@ int lua_json_elm_parse(lua_State *L)
 };
 
 int lua_json_elm_index_base(lua_State *L) {
-	json_elm *elm = check_json_elm2(L, 1, false);
+	json_elm *elm = check_json_elm(L, 1, false);
 
 	elm->index_json = lua_isnumber(L, -1) ? !(bool)lua_tointeger(L, -1) : 1;
 
@@ -1745,7 +1257,7 @@ int lua_json_elm_index_base(lua_State *L) {
 
 int lua_json_elm_info(lua_State *L)
 {
-	json_elm *elm = check_json_elm2(L, 1, false);
+	json_elm *elm = check_json_elm(L, 1, false);
 	if (lua_toboolean(L, 2) != 1)
 	{
 		lua_pushnumber(L, elm->nelms);
@@ -1761,9 +1273,9 @@ int lua_json_elm_info(lua_State *L)
 
 int lua_json_elm_gc(lua_State *L)
 {
-	json_elm *elm = check_json_elm2(L, 1, false);
+	json_elm *elm = check_json_elm(L, 1, false);
 	if (DEBUG)
-		printf("Destroy Elm: %ld\n", elm->id);
+		printf("Destroy Elm: %ld\n", elm->env_id);
 	// if(elm->dom_id)
 	// free(elm->dom_id);
 
@@ -1799,20 +1311,18 @@ void alloc_events(json_elm *elm)
 };
 
 static const struct luaL_Reg lua_json_methods[] = {
-	{"parse",			lua_json_elm_parse		},
-	{"parse_lua",		lua_json_lua_parse		},
+	{"parse",		lua_json_elm_parse	},
+	{"parse_lua",		lua_json_parse_lua	},
 	{"stringify",		lua_json_elm_stringify	},
 	{"stringify_lua",	lua_json_lua_stringify	},
-	{"strip",			l_strip_all				},
-	{"len",				lua_json_elm_len		},
-	{"tlen",			lua_json_parse_lua		},
+	{"len",			lua_json_elm_len	},
 	{"table_len",		lua_json_lua_table_len	},
-	{"parse_table",		lua_json_parse_lua		},
-	{"table_type",		lua_json_lua_is_mixed	},
+	{"parse_table",		lua_json_parse_lua	},
+	{"table_rlen",		print_table_rlen	},
 	{"__tostring",		lua_json_elm_tostring	},
-	{"env_get",			lua_json_elm_env_getr	},
-	{"__len",			lua_json_elm_size		},
-	{"__gc",			lua_json_elm_gc			},
+	{"fake",		new_fake 		},
+	{"__len",		lua_json_elm_size	},
+	{"__gc",		lua_json_elm_gc		},
 	{NULL, NULL}
 };
 

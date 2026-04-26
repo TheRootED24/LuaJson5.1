@@ -32,6 +32,19 @@
 // static int lua_json_array_tojson(lua_State *L)
 
 /**
+ * Move an element to position. 
+ * @function array:move
+ * @param move a valid index to insert item.
+ * @param to any
+ * @return  no value returned
+ * @usage local a = JSON:array(1,2,3.45,"test",true,null)
+ * print(a:tojson()) --> [1,2,3.45,"test",true,null]
+ * a:move(0,5)
+ * print(a:tojson()) --> [2,3.45,"test",true,null,1]
+ */
+//int lua_json_array_move(lua_State *L)
+
+/**
  * Inserts an element at position. 
  * @function array:insert
  * @param pos a valid index to insert item.
@@ -64,11 +77,13 @@
 /**
  * reverses the indexes of the elements of an array.  
  * @function array:reverse
+ * @param from index to start of reversal. (optional)
+ * @param to index to end of reversal. (optional)
  * @return 1 on success, 0 on failure.
  * @usage local a = JSON:array(0,1,2,3.45,"test",true,null)
  * print(a:tojson()) -->  [0,1,2,3.45,"test",true,null]
- * a:reverse()
- * print(a:tojson()) --> [null,true,"test",3.45,2,1,0]
+ * a:reverse(0,3)
+ * print(a:tojson()) -->  [3.45,2,1,0,"test",true,null]
  */
 //static int lua_json_elm_array_reverse(lua_State *L)
 
@@ -201,12 +216,10 @@ extern "C" {
 typedef struct ref ref;
 typedef struct json_elm json_elm;
 extern const char *marshal_json[], *marshal_lua[], *fields[];
-extern const char *NULL_CACHE;
 
 void lua_json_open_array(lua_State *L);
 int lua_json_array(lua_State *L);
 int lua_json_elm_parse_array(lua_State *L);
-int __lua_json_render_elm_array(lua_State *L, ref *seen);
 int lua_json_array_insert(lua_State *L);
 int lua_json_elm_array_pop(lua_State *L);
 

@@ -84,7 +84,6 @@ int subject_init(Subject* s);
 void subject_subscribe(Subject* s, void* context, NotifyFn callback);
 void subject_unsubscribe(Subject* s, void* context, NotifyFn callback);
 void subject_set_values(Subject* s, event *ev);
-void subject_get_values(Subject* s, event *ev);
 void subject_cleanup(Subject* s);
 void print_subscribers(Subject* s);
 

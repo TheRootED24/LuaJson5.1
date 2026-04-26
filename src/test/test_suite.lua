@@ -92,7 +92,7 @@ local escaped = JSON:array("test\n", "quote\"")
 assert_equal(escaped:tojson(), '["test\n","quote""]', "Escaped JSON")
 
 -- Test 17: Length calculations
-assert_equal(arr:len(), arr:rlen(0, false)-1, "Length consistency")
+assert_equal(arr:len(), arr:rlen(0, false), "Length consistency")
 
 -- Test 18: Object key deletion
 obj.name = nil

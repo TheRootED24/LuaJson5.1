@@ -146,10 +146,10 @@ static int marshal_object_string(lua_State *L, json_elm *elm, ref *seen)
         else
             luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[ObjString], elm->key, elm->val));
 
-		seen->nkeys++;
 		seen->quoted++;
     }
 
+    seen->nkeys++;
     // Clean up: Pop the formatted string pushed by lua_pushfstring
     lua_pop(L, 1);
 
@@ -196,6 +196,7 @@ static int marshal_object_number(lua_State *L, json_elm *elm, ref *seen)
 
     // Stack: [..., val, val_copy, fmt_string]
     lua_pop(L, 2); // Pop val_copy and fmt_string. Stack: [..., val]
+    seen->nkeys++;
 
     return 0;				
 }
@@ -211,6 +212,8 @@ static int marshal_object_bool(lua_State *L, json_elm *elm, ref *seen)
 
     // Stack: [..., val, val_copy, fmt_string]
     lua_pop(L, 2); 
+    seen->nkeys++;
+    
     return 0;
 }
 

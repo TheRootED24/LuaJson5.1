@@ -265,7 +265,7 @@ int mg_json_get(struct mg_str json, const char *path, int *toklen) {
   }
   return MG_JSON_NOT_FOUND;
 }
-
+/*
 struct mg_str mg_json_get_tok(struct mg_str json, const char *path) {
   int len = 0, ofs = mg_json_get(json, path, &len);
   return mg_str_n(ofs < 0 ? NULL : json.buf + ofs,
@@ -363,4 +363,4 @@ long mg_json_get_long(struct mg_str json, const char *path, long dflt) {
   long result = dflt;
   if (mg_json_get_num(json, path, &dv)) result = (long) dv;
   return result;
-}
+}*/

@@ -170,8 +170,6 @@ extern "C" {
 #include "lua_json_marshal.h"
 #include "lua_json_elm_event.h"
 
-
-
 #ifdef __cplusplus
 }
 #endif
@@ -198,97 +196,128 @@ extern "C" {
 } while(0)
 
 extern const char *marshal_json[], *marshal_lua[];
+extern void dumpstack(lua_State *L, const char *msg);
+
 typedef struct event event;
+typedef struct Subject Subject;
 typedef void (*NotifyFn)(void* context, event *ev);
 
 // GLOBAL DEFINES
 #define DEBUG 0
 //#define USE_THREADS
 
-// --- Disable Threading Support ---
+// --- Disable Event Threading Support ---
 #define LOCK(s)   ((void)0)
 #define UNLOCK(s) ((void)0)
 #define INIT_LOCK(s) (1)
 #define DESTROY_LOCK(s) ((void)0)
 
-#define lua_absindex(L, i) \
-    ((i) > 0 || (i) <= LUA_REGISTRYINDEX ? (i) : lua_gettop(L) + (i) + 1)
-
-#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
-
-#define ERROR(msg) \
-    fprintf(stderr, "[ ERROR ] %s:%d: %s (errno: %d, %s)\n", \
-            __FILENAME__, __LINE__, msg, errno, strerror(errno))
-
-extern void dumpstack(lua_State *L, const char *msg);
-
 #define btoa(x) ((x) ? "true" : "false")
+
 #define null "null"
 #define LUA_TNULL (-2)
+extern const char *NULL_CACHE;
 
 #define MARSHAL_JSON 	0
 #define MARSHAL_LUA 	1
-extern const char *NULL_CACHE; 
 
 typedef enum {
-	JSON_NUMBER_TYPE,		 // 0
-	JSON_BOOL_TYPE,			 // 1
-	JSON_LONG_TYPE,			 // 2
-	JSON_STRING_TYPE,		 // 3
-	JSON_ARRAY_TYPE,		 // 4
-	JSON_OBJECT_TYPE,		 // 5
-	JSON_NESTED_ARRAY_TYPE,	 // 6
-	JSON_NESTED_OBJECT_TYPE, // 7
-	JSON_ROOT_TYPE,			 // 8
-	JSON_NULL_TYPE			 // 9
+	JSON_NUMBER_TYPE,		// 0
+	JSON_BOOL_TYPE,			// 1
+	JSON_LONG_TYPE,			// 2
+	JSON_STRING_TYPE,		// 3
+	JSON_ARRAY_TYPE,		// 4
+	JSON_OBJECT_TYPE,		// 5
+	JSON_NESTED_ARRAY_TYPE,	 	// 6
+	JSON_NESTED_OBJECT_TYPE, 	// 7
+	JSON_ROOT_TYPE,			// 8
+	JSON_NULL_TYPE,			// 9
+	JSON_INVALID_TYPE		// 10
 }LUA_JSON_TYPES;
 
+typedef enum {
+	ObjKey,     	//0
+	ObjString,  	//1
+	ObjNumber,  	//2
+	ObjBool,    	//3
+	ObjNull,	//4
+	ArrString,  	//5
+	ArrNumber,  	//6
+	ArrBool,    	//7
+	ArrNull,	//8
+	Next,   	//9
+	OpenObj,    	//10
+	CloseObj,   	//11
+	OpenArr,    	//12
+	CloseArr,   	//13
+	EscObjString,  	//14
+	EscArrString,   //15
+	EscObjKey,    	//16
+	EscObjNumber, 	//17
+	EscObjBool,	//18
+	EscObjNull	//19
+}Type;
 
-typedef struct Subject Subject;
+typedef enum {
+	ids,
+	keys,
+}env_field;
 
-typedef union u_en_val{
+typedef union env_val{
 	int num;
 	uintptr_t env_id;
 	const char *key;
 }env_val;
 
-struct s_parse_elm{
-	struct mg_str *json;
-	const char *key;
-	char index;
-	int type;
-	bool isRoot;
-	double num;
-	long l;
-	int i;
-	bool b;
-	char *str;
-};
-typedef struct s_parse_elm parse_elm;
-
 typedef enum {
-    ObjKey,     	//0
-    ObjString,  	//1
-    ObjNumber,  	//2
-    ObjBool,    	//3
-    ObjNull,		//4
-    ArrString,  	//5
-    ArrNumber,  	//6
-    ArrBool,    	//7
-    ArrNull,		//8
-    Next,   		//9
-    OpenObj,    	//10
-    CloseObj,   	//11
-    OpenArr,    	//12
-    CloseArr,   	//13
-    EscObjString,  	//14
-    EscArrString,   //15
-	EscObjKey,    	//16
-    EscObjNumber, 	//17
-    EscObjBool,		//18
-    EscObjNull		//19
-}Type;
+	NEW_INDEX,
+	EXT_INDEX,
+	NIL_INDEX
+}index_type;
 
+typedef struct new_vlen {
+    size_t rlen, quoted, nkeys, trefs;
+}elm_vlen;
+
+typedef struct elm_rlen {
+	json_elm *root, *sub, *unsub;
+
+	elm_vlen base;
+	elm_vlen new;
+	elm_vlen ex;
+
+	uint8_t toi;
+	uint8_t vtype, ex_vtype;
+	bool is_exval, is_nil, is_null;
+
+}elm_rlen;
+
+
+typedef struct elm_event {
+	json_elm *root;
+	struct Subject *on_newindex, *on_change, *on_env;
+	int (*init)		(Subject *s);
+	void (*sub)		(Subject *s, void *ctx, NotifyFn fn);
+	void (*unsub)		(Subject *s, void *ctx, NotifyFn fn);
+	void (*set)		(Subject *s, event *ev);
+	void (*get)		(Subject *s, event *ev);
+	void (*cleanup)		(Subject *s);
+}elm_event;
+
+struct json_ops {
+    // Key/Index Logic (Specific to Objects/Arrays)
+    int (*key_to_idx)(json_elm *, bool);
+    int (*idx_to_key)(json_elm *);
+    void (*check_idx)(json_elm *);
+
+    // Common Logic (Render, Parse, etc.)
+    void (*init_rlen)(json_elm *, elm_rlen *);
+    int (*tostring)(lua_State *);
+    int (*stringify)(lua_State *);
+    int (*del)(lua_State *);
+    int (*parse)(lua_State *);
+    int (*render)(lua_State *, ref *);
+};
 
 // Marshal
 typedef struct marshal_t {
@@ -319,185 +348,94 @@ typedef struct marshal_t {
 } marshal;
 
 typedef struct ref {
-	int depth, max, ids;
 	lua_State *ML;
 	luaL_Buffer *B;
 	json_elm *elm, *nested;
 	marshal *marshal;
-	uintptr_t root, last, next;
 	uint8_t mode;
-	size_t rlen, quoted, nkeys;
-	int elms;
-	int ltype;
+	size_t rlen, quoted, nkeys, has_refs;
 	bool isRoot, escape;
-	int ptype;
-	char* b;
 	const char **Marshal;
-	bool(*check_next)(lua_State*L, struct ref*, uintptr_t);
-
 }ref;
 
-typedef struct nested_len {
-    size_t rlen, quoted, nkeys;
-}nested_len;
+struct json_elm {
+    /* 1. POINTERS (8-byte aligned) */
+    struct json_elm *root;
+    struct json_elm *nested;
+    lua_State *L;
+    elm_event *event;
+    elm_vlen *base;
+    
+    /* 2. DATA PAYLOAD */
+    const char *typename;
+    const char *key;
+    const char *val;
+    
+    // CRITICAL: Pointer to the VTable (Standardized)
+    const struct json_ops *opts; 
 
-typedef struct elm_event {
-	json_elm *root;
-	struct Subject *on_newindex, *on_change, *on_env;
-	int (*init)		(Subject *s);
-	void (*sub)		(Subject *s, void *ctx, NotifyFn fn);
-	void (*unsub)	(Subject *s, void *ctx, NotifyFn fn);
-	void (*set)		(Subject *s, event *ev);
-	void (*get)		(Subject *s, event *ev);
-	void (*cleanup)	(Subject *s);
-}elm_event;
+    uintptr_t env_id;
+    size_t nelms;
+    size_t klen;
+    size_t vlen;
 
-typedef enum {
-	NEW,
-	EXT,
-	PAR,
-	ERR,
-	NIL
-}new_index_t;
+    /* 3. THE COMPRESSED BLOCK (Replaces ~20 bytes with 8 bytes) */
+    
+    // A. The Index (16 bits)
+    uint16_t idx;
 
-typedef struct new_vlen {
-    size_t rlen, quoted, nkeys;
-}elm_vlen;
+    // B. The Mode (8 bits - kept full for safety)
+    uint8_t mode;
+    
+    // C. The Nibbles (4 bits each - Range 0-15)
+    uint8_t type   : 4;
+    uint8_t toi    : 4;
+    uint8_t ktype  : 4;
+    uint8_t vtype  : 4;
 
-typedef struct elm_rlen {
-	json_elm *root, *sub, *unsub;
+    // D. The Flags (1 bit each)
+    bool is_nil    : 1;
+    bool escape    : 1;
+    bool index_json: 1;
+    bool stale     : 1;
+    bool align     : 1;
+    bool is_ref    : 1;
 
-	elm_vlen base;
-    elm_vlen new;
-    elm_vlen ex;
-
-	uint8_t toi;
-	uint8_t vtype, ex_vtype;
-    bool is_exval, is_nil, is_null;
-
-}elm_rlen;
-
-
-// BASE JSON ELM CLASS
-struct json_elm
-{
-	struct json_elm *root, *nested;
-	// events
-	bool index_json;
-	elm_event *event;
-	lua_State *L;
-	elm_vlen *base;
-	uint8_t toi;
-	int vtable, idx;
-	uintptr_t id, env_id;
-	bool is_env_index, is_exval, stale, align;
-	const char* dom_id; // Add this for the JS bridge
-	uint8_t mode; // marshall mode
-	
-	// analytics
-	size_t type;
-	size_t nelms;
-	size_t rlen, klen, vlen, quoted, nkeys;
-	int plen, ktype, vtype, xvtype;
-	size_t children;
-	bool isRoot, is_nil, c_out, escape;
-	uint8_t elm_bi, env_bi;
-	bool err, parsed;
-	const char *typename, *key, *val, *errmsg;
-
-	int (*key_to_idx)(json_elm *, bool);
-	bool (*idx_to_key)(json_elm *);
-	void (*init_rlen)(json_elm *, elm_rlen *);
-	void (*check_idx)(json_elm *);
-	int (*tostring)(lua_State *);
-	int (*stringify)(lua_State *);
-	int (*del)(lua_State *);
-	int (*parse)(lua_State *);
-	// recursion call
-	int (*render)(lua_State *, ref *);
+    // Padding: Compiler adds ~2 bytes here automatically to reach 8-byte alignment
 };
 typedef struct json_elm json_elm;
 
-typedef enum {
-	children,
-	ids,
-	keys,
-	klens,
-	vlens,
-	vtypes
-}env_field;
-
-typedef struct elm_env {
-	json_elm *elm;
-	env_field field;
-	env_val val;
-	int(*add)	(lua_State*, json_elm*, env_val*, env_field);
-	int(*rem)	(lua_State*, json_elm*, int, env_field);
-	int(*insert)(lua_State*, json_elm*, int, env_val*, env_field);
-	int(*get)	(lua_State*, json_elm*, int, env_field);
-} elm_env;
-
-typedef enum {
-	NEW_INDEX,
-	EXT_INDEX,
-	NIL_INDEX,
-	INS_INDEX,
-}index_type;
-
-
-//json_elm* check_json_env(lua_State *L, bool align);
-//json_elm *check_json_elm(lua_State *L, int pos);
-json_elm *check_json_elm2(lua_State *L, int pos, bool align);
-//json_elm *check_json_elm(lua_State *L, int pos, bool align);
-//bool lua_json_elm_contians(lua_State *L, json_elm *elm, json_elm *nested);
+json_elm *check_json_elm(lua_State *L, int pos, bool align);
+int lua_json_is_elm(lua_State *L, int pos);
 bool lua_json_elm_contains(lua_State *L, json_elm *elm, json_elm *nested);
+uint8_t type_of_index(json_elm *elm);
+
 int lua_json_elm_len(lua_State *L);
 int lua_json_elm_size(lua_State *L);
 int lua_json_elm_tostring(lua_State *L);
-//int lua_json_elm_get_val_length(lua_State *L, json_elm *elm);
-void lua_json_elm_get_val_length(lua_State *L, json_elm *elm, elm_rlen *erl);
+int lua_json_elm_to_table(lua_State *L);
+int lua_json_elm_is_stale(lua_State *L);
+int lua_json_elm_index_base(lua_State *L);
 int lua_json_elm_stringify(lua_State *L);
 int lua_json_elm_parse(lua_State *L);
-int lua_json_elm_info(lua_State *L);
 int lua_json_elm_get_rlen(lua_State *L);
 int lua_json_elm_env_add(lua_State *L, json_elm *elm, env_val *val, env_field field);
 int lua_json_elm_env_insert(lua_State *L, json_elm *elm, int idx, env_val *val, env_field field);
-// int lua_json_elm_env_rem(lua_State *L, json_elm *elm, int idx, env_field field);
 int lua_json_elm_env_rem(lua_State *L, json_elm *elm, uintptr_t env_id, env_field field);
 int lua_json_elm_env_get(lua_State *L, json_elm *elm , int idx, env_field field);
+int lua_json_elm_get_quoted(lua_State *L);
+int lua_json_elm_get_nkeys(lua_State *L);
+
 void alloc_events(json_elm *elm);
-void lua_json_elm_update_len(json_elm *elm, nested_len *nl);
-void lua_json_elm_init_len(json_elm *elm, nested_len *nl);
-void json_type(parse_elm *elm);
 void lua_json_elm_unsub(json_elm *elm, json_elm *nested) ;
 void lua_json_elm_sub(json_elm *elm, json_elm *nested);
 void lua_json_elm_on_newindex(void* ctx, event *ev);
 void lua_json_elm_on_change(void* ctx, event *ev);
 void lua_json_env_on_change(void* ctx, event *ev);
-int L_json_elm_bind_dom(lua_State *L);
-int lua_json_elm_gc(lua_State *L);
-
-int lua_json_elm_env_getr(lua_State *L);
-int lua_json_elm_env_addr(lua_State *L);
-int lua_json_elm_env_insertr(lua_State *L);
-int lua_json_elm_env_remover(lua_State *L);
-int lua_json_elm_get_props(lua_State *L);
-uint8_t type_of_index(json_elm *elm);
-void lua_json_elm_get_val_length2(lua_State *L, json_elm *elm, elm_rlen *erl);
+void lua_json_elm_get_val_length(lua_State *L, json_elm *elm, elm_rlen *erl);
 void lua_json_elm_check_idx(json_elm *elm);
 void lua_json_elm_init_rlen(json_elm *elm, elm_rlen *erl);
 void update_rlen(json_elm *elm, elm_rlen *erl);
-int lua_json_elm_to_table(lua_State *L);
-int lua_json_elm_get_quoted(lua_State *L);
-int lua_json_elm_get_nkeys(lua_State *L);
-bool check_next(lua_State *L, ref *seen, uintptr_t next);
-int lua_json_elm_print_ids(lua_State *L);
-int lua_json_elm_is_stale(lua_State *L);
-size_t lua_json_lua_elm_find_nil(lua_State *L, json_elm *elm);
-int find_nil(lua_State *L);
-int lua_json_elm_index_base(lua_State *L);
-//int lua_json_elm_env_add(lua_State *L, json_elm *elm, env_val *val, env_field field);
-//int lua_json_elm_env_insert(lua_State *L, json_elm *elm, int idx, env_val *val, env_field field);
-//int lua_json_elm_env_rem(lua_State *L, json_elm *elm, int idx, env_field field);
+int lua_json_elm_print_refs(lua_State *L);
 
 #endif 

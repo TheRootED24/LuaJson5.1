@@ -23,10 +23,10 @@ print(string.format("Per Full Array Parse: (%d bytes) %.4f ms ", hg:len(), per_p
 
 
 print("-------------tojson()----------")
---hg[0].env[1]=nil
---print(hg:tojson())
+hg[0].env[1]=nil
+print(hg:tojson())
 bp =#hg
---hg:pop()
+hg:pop()
 print(bp, #hg)
 hg:tojson()
 print(hg:len())

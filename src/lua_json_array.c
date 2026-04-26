@@ -20,11 +20,13 @@
 
 extern const char *marshal_json[], *marshal_lua[];
 
+static int lua_json_handle_table(lua_State *L);
+
 static json_elm *lua_json_array_elm_index(lua_State *L, int pos)
 {
-	json_elm *elm = check_json_elm2(L, pos, true);
+	json_elm *elm = check_json_elm(L, pos, true);
 
-	elm->nested = lua_type(L, -1) == LUA_TUSERDATA ? check_json_elm2(L, -1, false) : NULL;
+	elm->nested = lua_json_is_elm(L, -1) ? check_json_elm(L, -1, false) : NULL;
 
 	if (elm->nested && lua_json_elm_contains(L, elm, elm->nested))
 		luaL_error(L, "ERROR: Recursive Elm Detected [ Key: %s elm: %p ]\n", elm->key, lua_topointer(L, -1));
@@ -34,27 +36,62 @@ static json_elm *lua_json_array_elm_index(lua_State *L, int pos)
 
 static int lua_json_array_tojson(lua_State *L)
 {
-	json_elm *elm = check_json_elm2(L, 1, false);
+	json_elm *elm = check_json_elm(L, 1, false);
 	elm->escape = lua_isboolean(L, 2) ? lua_toboolean(L, 2) : false;
 	elm->mode = MARSHAL_JSON;
 	lua_settop(L, 1);
 
-	elm->stringify(L);
+	elm->opts->stringify(L);
 
 	return 1;
 };
 
 static int lua_json_array_tolua(lua_State *L)
 {
-	json_elm *elm = check_json_elm2(L, 1, false);
+	json_elm *elm = check_json_elm(L, 1, false);
 	elm->escape = lua_isboolean(L, 2) ? lua_toboolean(L, 2) : false;
 	elm->mode = MARSHAL_LUA;
 	lua_settop(L, 1);
 
-	elm->stringify(L);
+	elm->opts->stringify(L);
 
 	return 1;
 };
+
+
+static int lua_json_array_move(lua_State *L)
+{
+	dumpstack(L, "arr move");
+	check_json_elm(L, 1, false);
+	// stack { elm , move, to }
+	int m = luaL_checkinteger(L, 2);
+	int t = luaL_checkinteger(L, 3);
+
+	lua_pop(L, 1);
+
+	if(m > t || m < t) {
+
+		get_json_table(L, 1);
+		// stack { elm, move, env }
+
+		for(int i = m; (m > t) ? i > t : i < t; (i > t) ? i-- : i++) {
+			// shift to move
+			lua_rawgeti(L, -1, (i > t) ? (i - 1) : (i + 1));
+			// stack { elm, move, env, arr[i - 1] }
+			lua_rawseti(L, -2, i);
+			// stack { elm, move, env }
+		}
+		// stack { elm, move, env }
+		lua_pushvalue(L, 2);
+		// stack { elm, move, env, move }
+		lua_rawseti(L, -2, t);
+		// stack { elm, move, env }
+		lua_pop(L, 2);
+		// stack { elm }
+	}
+
+	return 0;
+}
 
 int lua_json_array_insert(lua_State *L)
 {
@@ -65,9 +102,9 @@ int lua_json_array_insert(lua_State *L)
 	// stack { elm , idx, val }
 	json_elm *elm = lua_json_array_elm_index(L, -3);
 
-	if (lua_type(L, -1) == LUA_TUSERDATA)
+	if (lua_json_is_elm(L, -1))
 	{
-		json_elm *nested = check_json_elm2(L, -1, false);
+		json_elm *nested = check_json_elm(L, -1, false);
 
 		if (lua_json_elm_contains(L, elm, nested))
 			luaL_error(L, "ERROR: Recursive Elm Detected [ index: %d elm: %p ]\n", elm->idx, lua_topointer(L, -1));
@@ -76,7 +113,7 @@ int lua_json_array_insert(lua_State *L)
 	}
 
 	elm_rlen erl = {0};
-	elm->init_rlen(elm, &erl);
+	elm->opts->init_rlen(elm, &erl);
 	erl.toi = NEW_INDEX;
 
 	lua_json_elm_get_val_length(L, elm, &erl);
@@ -100,12 +137,12 @@ int lua_json_array_insert(lua_State *L)
 
 static int lua_json_elm_array_del(lua_State *L)
 {
-	json_elm *elm = check_json_elm2(L, -2, true); // lua_json_array_elm_index(L, -2);
+	json_elm *elm = check_json_elm(L, -2, true); // lua_json_array_elm_index(L, -2);
 
 	if (!elm->is_nil)
 	{ // Only run if not pre-handled (Standard: Always Run)
 		elm_rlen erl = {0};
-		elm->init_rlen(elm, &erl);
+		elm->opts->init_rlen(elm, &erl);
 		lua_pushnil(L);
 		erl.toi = NIL_INDEX;
 
@@ -156,21 +193,38 @@ static int lua_json_elm_array_del(lua_State *L)
 
 static int lua_json_array_reverse(lua_State *L)
 {
-	json_elm *elm = check_json_elm2(L, 1, false);
+	bool is_env = lua_istable(L, 1);
+	int nargs = (lua_gettop(L) -1);
+	json_elm *elm = check_json_elm(L, 1, false);
 	// stack { elm }
+	int start = 1, end = (int)elm->nelms;
+
+	if(nargs) 
+		start = is_env ? luaL_checkinteger(L, 2) : (luaL_checkinteger(L, 2) + 1);
+
+	if(nargs > 1)
+		end = is_env ? luaL_checkinteger(L, 3) : (luaL_checkinteger(L, 3) + 1);
+
+	
+	if(nargs)lua_pop(L, nargs);
+
+
+	if(start >= end)
+		return luaL_error(L, "ERROR: index: %d cannot be reversed from index: %d ", start, end);
+
 	get_json_table(L, 1);
 	// stack { elm, env }
-	int start = 1, end = (int)elm->nelms;
+	
 	for (int s = start, e = end; s < e; s++, e--)
 	{
-		lua_rawgeti(L, 2, s); // Get element at 0
+		lua_rawgeti(L, 2, s); // Get element at start
 		// stack { elm, env, val0 }
 		lua_rawgeti(L, 2, e); // Get element at end
 		// stack { elm, env, val0,  val1 }
 		lua_rawseti(L, 2, s); // Move end to start
 		// stack { elm, env, elm0}
 		lua_rawseti(L, 2, e); // Move start to end
-							  // stack { elm, env }
+		// stack { elm, env }
 	}
 	lua_pop(L, 1);
 	// stack { elm }
@@ -179,28 +233,22 @@ static int lua_json_array_reverse(lua_State *L)
 
 static int lua_json_elm_array_push(lua_State *L)
 {
-	// hack to align index for check_elm (ToDO switch to absolute indexes in check elm)
-	// stack { elm }
-	// lua_pushstring(L, "insert");
-	// stack { elm, ..., "insert" }
-	// lua_insert(L, 2);
-	// stack { elm, "insert", ... }
-	json_elm *elm = check_json_elm2(L, 1, false);
-	// lua_remove(L, 2);
-
-	lua_pushinteger(L, elm->nelms); // Stack: [UD, VAL, IDX]
-	lua_insert(L, 2);				// Stack: [UD, IDX, VAL]
-
-	lua_json_array_insert(L);
-
+	json_elm *elm = check_json_elm(L, 1, false);
+	// stack { elm, val }
 	lua_pushinteger(L, elm->nelms);
-
+	// stack { elm, val, idx }
+	lua_insert(L, 2);
+	// stack { elm, idx, val }
+	lua_json_array_insert(L);
+	// stack { elm }
+	lua_pushinteger(L, elm->nelms);
+	// stack { elm, nelms }
 	return 1;
 }
 
 int lua_json_elm_array_pop(lua_State *L)
 {
-	json_elm *elm = check_json_elm2(L, -1, false);
+	json_elm *elm = check_json_elm(L, -1, false);
 	// stack { elm }
 	lua_pushinteger(L, (int)elm->nelms - 1);
 	// stack { elm, pos};
@@ -212,39 +260,40 @@ int lua_json_elm_array_pop(lua_State *L)
 
 static int lua_json_array_shift(lua_State *L)
 {
-	json_elm *elm = check_json_elm2(L, 1, false);
-
+	json_elm *elm = check_json_elm(L, 1, false);
+	// stack { elm }
 	lua_settop(L, 1);
 	if (elm->nelms == 0)
 		return 0;
 
 	// Resolver bumps 0 -> 1.
 	lua_pushinteger(L, 0); // Stack: [UD, 0]
-
-	// 3. Delegate
+	// stack { elm, 0 }
+	// Delegate task to delete
 	return lua_json_elm_array_del(L);
 }
 
 static int lua_json_array_unshift(lua_State *L)
 {
-	json_elm *elm = check_json_elm2(L, 1, false);
+	json_elm *elm = check_json_elm(L, 1, false);
 	int n = lua_gettop(L);
 	// stacl { elm, ... }
 	for (int i = n; i >= 2; i--)
 	{
+		// disable alignment
 		elm->align = false;
 		lua_pushcfunction(L, lua_json_array_insert);
 		// stack { elm, ..., insert }
 		lua_pushvalue(L, 1); // elm
 		// stack { elm, ..., insert, elm }
-		lua_pushinteger(L, 1); // index 0 will be incremented in new index +1
+		lua_pushinteger(L, 1);
 		// stack { elm, ..., insert, elm, 1 }
 		lua_pushvalue(L, i);
 		// stack { elm, ..., insert, elm, 1, i }
 		lua_call(L, 3, 0);
 		// stack { elm, ... }
 	}
-
+	// re-enable alignment 
 	elm->align = true;
 	lua_pushinteger(L, elm->nelms);
 	// stack { elm, #elm }
@@ -253,31 +302,30 @@ static int lua_json_array_unshift(lua_State *L)
 
 static int lua_json_array_ref(lua_State *L)
 {
-	check_json_elm2(L, 1, false);
+	check_json_elm(L, 1, false);
 	// stack { elm }
 	return 1;
 };
 
 static int lua_json_array_unref(lua_State *L)
 {
-	json_elm *elm = check_json_elm2(L, -1, false);
-	size_t len = 0;
-
-	elm->stringify(L);
-
-	const char *json = lua_tolstring(L, -1, &len);
-	lua_pop(L, 3);
-
-	lua_pushlstring(L, json, len);
+	json_elm *elm = check_json_elm(L, -1, false);
+	// stack { elm }
+	elm->opts->stringify(L);
+	// stack { elm, env, json }
+	lua_replace(L, 1);
+	// stack { json, env }
+	lua_pop(L, 1);
+	// stack { json }
 	lua_json_elm_parse(L);
-
+	// { elm }
 	return 1;
 };
 
-static int lua_json_render_array(lua_State *L, struct ref *seen)
+static int lua_json_array_render(lua_State *L, struct ref *seen)
 {
-	bool ok = true;
-	json_elm *elm = check_json_elm2(L, -1, false);
+	
+	json_elm *elm = check_json_elm(L, -1, false);
 	// stack { elm }
 	get_json_table(L, -1);
 	// stack { elm, env }
@@ -285,89 +333,106 @@ static int lua_json_render_array(lua_State *L, struct ref *seen)
 
 	for (size_t i = 1; i <= elm->nelms; i++)
 	{
-		// stack { elm, env }
 		if (lua_istable(L, -1))
 			lua_rawgeti(L, -1, i);
-		// stack { elm, env, val }
-
-		while (lua_isnil(L, -1))
-		{
-			ok = false;
-			// stack { elm, env, nil }
-			lua_pop(L, 1);
-			// stack { elm, env }
-			elm->align = false;
-			elm->is_nil = true;
-			// lua_State *L1 = lua_newthread(L);
-			//  stack { elm, env, thread }
-			// lua_pushcfunction(L1, lua_json_elm_array_del);
-			lua_pushvalue(L, -2);
-			// stack { elm, env, thread, elm }
-			// stack L1 { del }
-			// lua_xmove(L, L1, 1);
-			// stack L1 { del, elm }
-			lua_pushinteger(L, i);
-			// stack { elm, env, elm, i }
-			// stack L1 { del, elm,  i }
-			lua_json_elm_array_del(L);
-			// lua_replace(L, -2);
-			lua_pop(L, 2);
-			// int status = lua_resume(L1, 2);
-			// if(status != 0) break;
-			// lua_pop(L, 1);
-			lua_rawgeti(L, -1, i);
 			// stack { elm, env, val }
-			if (i >= elm->nelms)
-				break;
-			// how bout now ??
-			ok = true;
-		}
-		// nothing to render .. bail
-		if (!ok)
-			break;
-		// we have a valid type, if its not the first add the comma
-		if (ok && (i > 1))
-			seen->marshal->next(seen);
 
-		switch (lua_type(L, -1))
-		{
-		case LUA_TNIL:
-		{
-			lua_pop(L, 1);
-			lua_pushstring(L, "null");
-			seen->marshal->arr_string(L, elm, seen);
-			lua_pop(L, 1);
-			break;
-		}
-		case LUA_TUSERDATA:
-		{
-			seen->nested = check_json_elm2(L, -1, false);
-			seen->nested->render(L, seen);
-			lua_pop(L, 2);
-			break;
-		}
+		bool ok = true;
 
-		case LUA_TSTRING:
-		{
-			seen->marshal->arr_string(L, elm, seen);
-			lua_pop(L, 1);
-			break;
+		if(!lua_istable(L, -1)) {
+			while (lua_isnil(L, -1))
+			{
+				// stack { elm, env, nil }
+				ok = false;
+				elm->align = false;
+				elm->is_nil = true;
+				
+				lua_pop(L, 1);
+				// stack { elm, env }
+				lua_pushvalue(L, -2);
+				// stack { elm, env, elm }
+				lua_pushinteger(L, i);
+				// stack { elm, env, elm, i }
+				lua_json_elm_array_del(L);
+				// stack { elm, env, elm, nil }
+				lua_pop(L, 2);
+				// stack { elm, env }
+				lua_rawgeti(L, -1, i);
+				// stack { elm, env, val }
+				if (i >= elm->nelms) break;
+				// how bout now ??
+				ok = true;
+			}
 		}
 
-		case LUA_TNUMBER:
-		{
-			seen->marshal->arr_number(L, seen);
+		if(lua_isuserdata(L, -1) && !lua_json_is_elm(L, -1)) {
 			lua_pop(L, 1);
-			break;
+			continue;
 		}
 
-		case LUA_TBOOLEAN:
-		{
-			seen->marshal->arr_bool(L, seen);
-			lua_pop(L, 1);
+		if( ok ) {
+
+			if(i > 1) seen->marshal->next(seen);
+
+			switch (lua_type(L, -1))
+			{
+
+				case LUA_TSTRING:
+				{
+					seen->marshal->arr_string(L, elm, seen);
+					lua_pop(L, 1);
+					break;
+				}
+
+				case LUA_TNUMBER:
+				{
+					seen->marshal->arr_number(L, seen);
+					lua_pop(L, 1);
+					break;
+				}
+
+				case LUA_TUSERDATA:
+				case LUA_TTABLE:
+				{
+					if(lua_istable(L, -1)) {
+						seen->has_refs += 1;
+						lua_json_handle_table(L);
+					}
+
+					if(lua_json_is_elm(L, -1)) {
+						seen->nested = check_json_elm(L, -1, false);
+						seen->nested->opts->render(L, seen);
+					}
+
+					lua_pop(L, 2);
+					break;
+				}
+
+				case LUA_TBOOLEAN:
+				{
+					seen->marshal->arr_bool(L, seen);
+					lua_pop(L, 1);
+					break;
+				}
+
+				case LUA_TNIL:
+				{
+					lua_pushstring(L, "null");
+					lua_replace(L, -2);
+					seen->marshal->arr_string(L, elm, seen);
+					lua_pop(L, 1);
+					elm->nelms++;
+					break;
+				}
+				
+				default: {
+					lua_pop(L, 1);
+					break;
+				}
+			}
+		}
+		else
 			break;
-		}
-		}
 	}
 
 	seen->mode == MARSHAL_JSON ? seen->marshal->arr_close(seen) : seen->marshal->obj_close(seen);
@@ -378,23 +443,12 @@ static int lua_json_render_array(lua_State *L, struct ref *seen)
 	return 0;
 };
 
-static int array_get_root(lua_State *L)
-{
-	json_elm *elm = check_json_elm2(L, 1, false);
-
-	printf("Elm Root: %p\n", &elm->root);
-	lua_pop(L, 1);
-
-	return 0;
-}
-
-static int
-lua_json_array_newindex(lua_State *L)
+static int lua_json_array_newindex(lua_State *L)
 {
 	json_elm *elm = lua_json_array_elm_index(L, -3);
 
 	elm_rlen erl = {0};
-	elm->init_rlen(elm, &erl);
+	elm->opts->init_rlen(elm, &erl);
 	elm->vtype = lua_type(L, -1);
 	elm->ktype = lua_type(L, -2);
 
@@ -443,7 +497,7 @@ lua_json_array_newindex(lua_State *L)
 
 static int lua_json_array_index(lua_State *L)
 {
-	json_elm *elm = check_json_elm2(L, -2, true); // lua_json_array_elm_index(L, -2); // check_json_elm(L, -2);
+	json_elm *elm = check_json_elm(L, -2, true); // lua_json_array_elm_index(L, -2); // check_json_elm(L, -2);
 
 	// PATH B: String Key -> METHOD LOOKUP
 	// We look inside the Method Table (Upvalue 1)
@@ -498,24 +552,24 @@ static int lua_json_array_index(lua_State *L)
 	return 0;
 }
 
-static int lua_json_handle_table(lua_State *L, int pos) {
+static int lua_json_handle_table(lua_State *L) {
 	// stack { elm, t, ... }
+	int base = lua_gettop(L);
 	lua_State *L1 = lua_newthread(L);
 	// stack { elm, t, ..., thread }
 	lua_pushcfunction(L1, lua_json_parse_lua);
 	// thread stack { parse_lua }
-	lua_pushvalue(L, pos);
+	lua_pushvalue(L, -2);
 	// stack { elm, t, ..., thread, t }
 	lua_xmove(L, L1, 1);
 	// thread stack { parse_lua, t }
-
 	if((bool)lua_resume(L1, 1)) 
-		luaL_error(L, "ERROR: failed to parse table %s:%d:", __FILENAME__, __LINE__);
+		luaL_error(L, "ERROR: failed to parse table !!");
 
 	lua_xmove(L1, L, 1);
 
-	lua_replace(L, pos);
-	lua_pop(L, 1);
+	lua_replace(L, base);
+	lua_settop(L, base);
 
 	return 0;
 }
@@ -530,7 +584,7 @@ static int lua_json_array_inline_args(lua_State *L, int nargs)
 		int stack_index = 2 + i;
 
 		// 2. Strict Safety Check
-		// We verify the value *before* pushing keys to keep the stack clean
+		// verify the value *before* pushing keys to keep the stack clean
 		if (lua_isnil(L, stack_index))
 		{
 			fprintf(stderr, "Invalid Entry at Index: %d, aborting create array !!\n", i);
@@ -538,12 +592,12 @@ static int lua_json_array_inline_args(lua_State *L, int nargs)
 			return 1;
 		}
 
-		if(lua_istable(L, stack_index))
-			lua_json_handle_table(L, stack_index);
+		//if(lua_istable(L, stack_index))
+			//lua_json_handle_table(L, stack_index);
 
 		// 3. Dispatch (elm[i] = val)
-		lua_pushinteger(L, i);		   // Key: 0, 1, 2... (0-based for C-Elm)
-		lua_pushvalue(L, stack_index); // Value: Copy from stack position
+		lua_pushinteger(L, i);		// Key: 0, 1, 2... (0-based for C-Elm)
+		lua_pushvalue(L, stack_index); 	// Value: Copy from stack position
 
 		// triggers __newindex(elm, i, val)
 		// updates RLEN and quoted counters automatically
@@ -568,9 +622,9 @@ static int lua_json_array_init(lua_State *L, int nargs)
 
 static int lua_json_array_gc(lua_State *L)
 {
-	json_elm *self = check_json_elm2(L, 1, false);
+	json_elm *self = check_json_elm(L, 1, false);
 
-	if (self->base)
+	if(self->base)
 		free(self->base);
 
 	lua_pushlightuserdata(L, (void *)self->env_id);
@@ -590,6 +644,21 @@ static int lua_json_array_gc(lua_State *L)
 	return 0;
 }
 
+// Bundle B: The "Array" Specialist (Common Only)
+static struct json_ops OPS_ARRAY = {
+     // Real Hashing logic
+    .tostring	= &lua_json_elm_tostring,
+    .stringify	= &lua_json_elm_stringify,
+    .parse      = &lua_json_elm_parse,
+	
+	.init_rlen	= &lua_json_elm_init_rlen,
+	.check_idx	= &lua_json_elm_check_idx,
+    
+   .render     	= &lua_json_array_render,
+   .del			= &lua_json_elm_array_del
+
+};
+
 static int lua_json_array_new(lua_State *L, bool parse)
 {
 	int nargs = lua_gettop(L);
@@ -598,7 +667,6 @@ static int lua_json_array_new(lua_State *L, bool parse)
 	// alloc event lists
 	alloc_events(elm);
 	elm->L = L;
-	elm->isRoot = true;
 	elm->index_json = true;
 	elm->align = true;
 	elm->type = JSON_ARRAY_TYPE;
@@ -619,13 +687,14 @@ static int lua_json_array_new(lua_State *L, bool parse)
 	lua_setmetatable(L, -2);
 	// c side methods
 
-	elm->tostring = &lua_json_elm_tostring;
+	elm->opts = &OPS_ARRAY;
+	/*elm->tostring = &lua_json_elm_tostring;
 	elm->stringify = &lua_json_elm_stringify;
 	elm->parse = &lua_json_elm_parse;
-	elm->render = &lua_json_render_array;
+	elm->render = &lua_json_array_render;
 	elm->init_rlen = &lua_json_elm_init_rlen;
 	elm->check_idx = &lua_json_elm_check_idx;
-	elm->del = &lua_json_elm_array_del;
+	elm->del = &lua_json_elm_array_del;*/
 	elm->base->rlen = 2;
 
 	lua_pushlightuserdata(L, (void *)elm->env_id);
@@ -683,6 +752,14 @@ int lua_json_elm_parse_array(lua_State *L)
 	return 1;
 };
 
+static int lua_json_array_is_ref(lua_State *L) {
+	json_elm *ref = check_json_elm(L, 1, false);
+
+	lua_pushboolean(L, ref->is_ref);
+
+	return 1;
+}
+
 static const struct luaL_Reg lua_json_array_lib_m[] = {
 	// --------------------------------------
 	// 1. LIFECYCLE & OPERATORS (Metamethods)
@@ -697,35 +774,30 @@ static const struct luaL_Reg lua_json_array_lib_m[] = {
 	{"tojson", 	lua_json_array_tojson	},
 	{"tolua", 	lua_json_array_tolua	},
 	{"totable", 	lua_json_elm_to_table	},
-	{"info", 	lua_json_elm_info	},
-	{"rlen", 	lua_json_elm_get_rlen	},
 	{"len", 	lua_json_elm_len	},
+	{"rlen", 	lua_json_elm_get_rlen	},
 
 	// --------------------------------------
 	// 3. ARRAY MUTATION (The CRUD Suite)
 	// --------------------------------------
+	{"move",	lua_json_array_move	},
 	{"insert",	lua_json_array_insert	},
 	{"push",	lua_json_elm_array_push	},
 	{"pop",		lua_json_elm_array_pop	},
 	{"shift",	lua_json_array_shift	},
 	{"unshift",	lua_json_array_unshift	},
 	{"reverse",	lua_json_array_reverse	},
-	{"del", lua_json_elm_array_del		},
+	{"del", 	lua_json_elm_array_del	},
 
 	// --------------------------------------
 	// 4. HIERARCHY & BINDING
 	// ---------------------------------------
 	{"ref",		lua_json_array_ref	},
 	{"unref",	lua_json_array_unref	},
-	{"get_root",	array_get_root		},
-	{"get_env",	lua_json_elm_env_getr	},
-	{"bind_dom",	L_json_elm_bind_dom	},
-	{"props",	lua_json_elm_get_props	},
-	{"ids",		lua_json_elm_print_ids	},
 	{"is_stale", 	lua_json_elm_is_stale	},
-	{"find_nil", 	find_nil		},
 	{"json_base", 	lua_json_elm_index_base	},
-	{"parse_table", lua_json_parse_lua	},
+	{"refs",	lua_json_elm_print_refs	},
+	{"is_ref",	lua_json_array_is_ref	},
 	{NULL, NULL}
 };
 

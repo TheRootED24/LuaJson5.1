@@ -40,12 +40,12 @@
 <h2>Classes</h2>
 <ul class="nowrap">
   <li><a href="../classes/array.html">array</a></li>
+  <li><a href="../classes/lua.html">lua</a></li>
   <li><strong>object</strong></li>
 </ul>
 <h2>Modules</h2>
 <ul class="nowrap">
   <li><a href="../modules/JSON.html">JSON</a></li>
-  <li><a href="../modules/lua_json_lua.html">lua_json_lua</a></li>
 </ul>
 
 </div>
@@ -66,6 +66,34 @@
 	<tr>
 	<td class="name" nowrap><a href="#object:keys">object:keys ()</a></td>
 	<td class="summary">Create a new array containing the keys of an object</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#object:move">object:move (move, to)</a></td>
+	<td class="summary">move an existing key/value pair to any exisiting index</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#object:insert">object:insert (at, new, value)</a></td>
+	<td class="summary">insert new key/value pair at any existing position</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#object:push">object:push (key, value)</a></td>
+	<td class="summary">push new key/value pair to end of object</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#object:pop">object:pop ()</a></td>
+	<td class="summary">pop the last key/value pair from object</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#object:shift">object:shift ()</a></td>
+	<td class="summary">Remove the first key/value pair from object.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#object:unshift">object:unshift (key, val[, ...])</a></td>
+	<td class="summary">add one or more key/value pairs to the beginning of an object.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#object:reverse">object:reverse (from, to)</a></td>
+	<td class="summary">reverses the indexes of an object key/value pairs.</td>
 	</tr>
 </table>
 
@@ -88,7 +116,7 @@
     <h3>Returns:</h3>
     <ol>
 
-        json string
+        string: json string
     </ol>
 
 
@@ -111,15 +139,248 @@
     <h3>Returns:</h3>
     <ol>
 
-        json array of object keys
+        array: json array of the objects keys
     </ol>
 
 
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example"><span class="keyword">local</span> keys = o:<span class="function-name">keys</span>()
+        <pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null}
+</span><span class="keyword">local</span> keys = obj:<span class="function-name">keys</span>()
 <span class="global">print</span>(keys:<span class="function-name">tojson</span>())<span class="comment">--&gt; ["test","age","root"]</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "object:move"></a>
+    <strong>object:move (move, to)</strong>
+    </dt>
+    <dd>
+    move an existing key/value pair to any exisiting index
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">move</span>
+         string or number: exisiting key or index of pair to move
+        </li>
+        <li><span class="parameter">to</span>
+         string or number: exisiting key or index a pair to start the shift right
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        no value retured.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null}
+</span>obj:<span class="function-name">move</span>(<span class="string">"root"</span>, <span class="string">"test"</span>)
+<span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"root":null,"test":"obj","age":99}</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "object:insert"></a>
+    <strong>object:insert (at, new, value)</strong>
+    </dt>
+    <dd>
+    insert new key/value pair at any existing position
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">at</span>
+         string or number: exisitng key or index to insert the new pair
+        </li>
+        <li><span class="parameter">new</span>
+                  string: new key
+        </li>
+        <li><span class="parameter">value</span>
+                   any:  new value
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        number: updated size of object.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null}
+</span><span class="keyword">local</span> s = obj:<span class="function-name">insert</span>(<span class="number">0</span>, <span class="string">"new"</span>,<span class="string">"value"</span>)
+<span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"new":"value","test":"obj","root":null,"age":99}
+</span><span class="global">print</span>(s) <span class="comment">--&gt; 4 </span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "object:push"></a>
+    <strong>object:push (key, value)</strong>
+    </dt>
+    <dd>
+    push new key/value pair to end of object
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">key</span>
+         string: new key
+        </li>
+        <li><span class="parameter">value</span>
+         any: new value
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        number: updated size of object.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null}
+</span><span class="keyword">local</span> s = obj:<span class="function-name">push</span>(<span class="string">"new"</span>,<span class="string">"value"</span>)
+<span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null,"new":"value"}
+</span><span class="global">print</span>(s) <span class="comment">--&gt; 4</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "object:pop"></a>
+    <strong>object:pop ()</strong>
+    </dt>
+    <dd>
+    pop the last key/value pair from object
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        any: the popped value.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null}
+</span><span class="keyword">local</span> p = obj:<span class="function-name">pop</span>()
+<span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99}
+</span><span class="global">print</span>(p) <span class="comment">--&gt; null</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "object:shift"></a>
+    <strong>object:shift ()</strong>
+    </dt>
+    <dd>
+    Remove the first key/value pair from object.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        any: the shifted value.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null}
+</span><span class="keyword">local</span> s = obj:<span class="function-name">shift</span>()
+<span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"age":99,"root":null}
+</span><span class="global">print</span>(s) <span class="comment">--&gt; obj</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "object:unshift"></a>
+    <strong>object:unshift (key, val[, ...])</strong>
+    </dt>
+    <dd>
+    add one or more key/value pairs to the beginning of an object.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">key</span>
+         string: new key
+        </li>
+        <li><span class="parameter">val</span>
+         any: new value
+        </li>
+        <li><span class="parameter">...</span>
+          additional pairs
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        number: the updated object size.
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null}
+</span><span class="keyword">local</span> npairs = obj:<span class="function-name">unshift</span>(<span class="string">"name"</span>, <span class="string">"teddy"</span>, <span class="string">"id"</span>, <span class="number">101</span>, <span class="string">"admin"</span>, <span class="keyword">false</span>))
+<span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"name":"teddy","id":101,"admin":false,"age":99,"root":null}
+</span><span class="global">print</span>(npairs) <span class="comment">--&gt; 5</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "object:reverse"></a>
+    <strong>object:reverse (from, to)</strong>
+    </dt>
+    <dd>
+    reverses the indexes of an object key/value pairs.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">from</span>
+         string or number: key or index to start reversal. (optional)
+        </li>
+        <li><span class="parameter">to</span>
+         string or number: key or index to end of reversal. (optional)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        no value returned
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null, "name":"teddy"}
+</span>npairs = obj:<span class="function-name">reverse</span>(<span class="string">"test"</span>, <span class="string">"root"</span>))
+<span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {""root":null,"age":99,test":"obj","name":"teddy"}</span></pre>
     </ul>
 
 </dd>
@@ -130,7 +391,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
-<i style="float:right;">Last updated 2026-02-08 07:10:18 </i>
+<i style="float:right;">Last updated 2026-04-26 10:32:01 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>
