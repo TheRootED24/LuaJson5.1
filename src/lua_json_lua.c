@@ -408,7 +408,7 @@ int lua_json_lua_stringify(lua_State *L)
 		elm->mode = mode != -1 ? mode : elm->mode;
 		elm->escape = esc;
 
-		elm->opts->stringify(L);
+		elm->ops->stringify(L);
 
 		if(lua_isstring(L, -1))
 			printf("%s\n", lua_tostring(L, -1));
@@ -426,7 +426,7 @@ int lua_json_lua_stringify(lua_State *L)
 		elm->mode = mode != -1 ? mode : elm->mode;
 		elm->escape = esc;
 
-		elm->opts->stringify(L);
+		elm->ops->stringify(L);
 
 		elm->mode = orig_mode;
 		elm->escape = orig_esc;

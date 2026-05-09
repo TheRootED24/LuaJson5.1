@@ -23,19 +23,54 @@
 */
 
 /**
- * render an object as valid json
+ * render an object as valid json object
  * @function object:tojson
+ * @param start string or number: start position (optional)
+ * @param end string or number: end position (optional)
+ * @param escape bool: escape output (optional)
  * @return string: json string 
  * 
- *@usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
+ * @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
+ * @usage print(obj:tojson(0)) --> {"test":"obj"}
+ * @usage print(obj:tojson("test", "age")) --> {"test":"obj", "age", 99}
+ * @usage print(obj:tojson(1,2,true)) --> {\"age\":99,\"root\":false}
  */
 //static int lua_json_object_tojson(lua_State *L) 
+
+/**
+ * render an object as a serialized lua table
+ * @function object:tolua
+ * @param start string or number: start position (optional)
+ * @param end string or number: end position (optional)
+ * @param escape bool: escape output (optional)
+ * @return string: serialized table 
+ * 
+ * @usage print(obj:tolua()) --> {test="obj",age=99,root=null,}
+ * @usage print(obj:tolua(0)) --> {test="obj"}
+ * @usage print(obj:tolua("test", "age")) --> {test="obj",age=99}
+ * @usage print(obj:tolua(1,2,true)) --> {test=\"obj\",age=99,root=false}
+ */
+//static int lua_json_object_tojson(lua_State *L) 
+
+/**
+ * return lua json object as a lua table
+ * @function object:totable
+ * @return lua table
+ * @see JSON:object
+ * @usage local t = o:totable()
+ * print(t) --> table: 0x627a723b6400
+ * print(o) --> object: 0x627a723a9d30
+ * print(o[0]) --> test
+ * print(t[1]) --> test
+ * print(o[2]) --> null
+ * print(t[3]) --> null
+ */
+// static int lua_json_array_tojson(lua_State *L)
 
 /**
  * Create a new array containing the keys of an object
  * @function object:keys
  * @return array: json array of the objects keys 
- * 
  * @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
  * local keys = obj:keys() 
  * print(keys:tojson())--> ["test","age","root"]
@@ -50,7 +85,7 @@
  *  @param to string or number: exisiting key or index a pair to start the shift right
  *  @return no value retured.
  * 
- *@usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
+ * @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
  * obj:move("root", "test")
  * print(obj:tojson()) --> {"root":null,"test":"obj","age":99}
  */

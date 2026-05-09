@@ -29,8 +29,8 @@
  * @param tname name of new element
  * @param t lua table
  * @return an initialized lua json array or object.
- * @usage local t = {1,2,3.45,"test",true}
- print(t) --> table: 0x5c92968f1c90
+ * @usage local t = {1,2,3.45,"test",true} --> 
+ * print(t) --> table: 0x5c92968f1c90
  *
  * local ta = JSON.parse_lua(ta, t)
  * print(ta) --> array: 0x5c92968f09a8
@@ -44,6 +44,9 @@
  * @function .stringify_lua
  * @param tname name of new element
  * @param elm lua json element
+ * @usage local t = { 1,2,3,4,5 }
+ * s = JSON.stringify(s, t)
+ * print(s) --> [1,2,3,4,5]
  * @return lua table
  */
 //int lua_json_lua_stringify(lua_State *L)
@@ -51,9 +54,11 @@
 /**
  * Convert a lua json element to a table.
  * @function .tolua
- * @param tname name of new element
+ * @param tname table name
  * @param elm lua json element
  * @return lua table
+ * @usage  print(o:tojson()) --> {"some":"data","age":99}
+ * print(o:tolua()) -->  {some="data",age=99}
  */
 //int lua_json_tolua(lua_State *L)
 

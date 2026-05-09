@@ -54,14 +54,24 @@
 
 <h1>Class <code>array</code></h1>
 <p>JSON.array Class</p>
-<p></p>
+<p>
+
+</p>
 
 
 <h2><a href="#Methods">Methods</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#array:tojson">array:tojson ()</a></td>
-	<td class="summary">render an array as valid json</td>
+	<td class="name" nowrap><a href="#array:tojson">array:tojson (start, end, escape)</a></td>
+	<td class="summary">render an array as valid json array</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#array:tolua">array:tolua (start, end, escape)</a></td>
+	<td class="summary">render an array as lua table dump</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#array:totable">array:totable ()</a></td>
+	<td class="summary">return lua json array as a lua table</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#array:move">array:move (move, to)</a></td>
@@ -114,12 +124,24 @@
     <dl class="function">
     <dt>
     <a name = "array:tojson"></a>
-    <strong>array:tojson ()</strong>
+    <strong>array:tojson (start, end, escape)</strong>
     </dt>
     <dd>
-    render an array as valid json
+    render an array as valid json array
 
 
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">start</span>
+         number: start position (optional)
+        </li>
+        <li><span class="parameter">end</span>
+         number end position (optional)
+        </li>
+        <li><span class="parameter">escape</span>
+         boolean: escape output (optional)
+        </li>
+    </ul>
 
     <h3>Returns:</h3>
     <ol>
@@ -135,7 +157,83 @@
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example"><span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [1,2,3.45,"test",true,null]</span></pre>
+        <li><pre class="example"><span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [1,2,3.45,"test",true,null]</span></pre></li>
+        <li><pre class="example"><span class="global">print</span>(a:<span class="function-name">tojson</span>(<span class="number">0</span>)) <span class="comment">--&gt; [1]</span></pre></li>
+        <li><pre class="example"><span class="global">print</span>(a:<span class="function-name">tojson</span>(<span class="number">4</span>,<span class="number">5</span>)) <span class="comment">--&gt; [true,null]</span></pre></li>
+        <li><pre class="example"><span class="global">print</span>(a:<span class="function-name">tojson</span>(<span class="number">0</span>,<span class="number">4</span>,<span class="keyword">true</span>)) <span class="comment">--&gt; [1,2,3.45,\"test\",true]</span></pre></li>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "array:tolua"></a>
+    <strong>array:tolua (start, end, escape)</strong>
+    </dt>
+    <dd>
+    render an array as lua table dump
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">start</span>
+         number: start position (optional)
+        </li>
+        <li><span class="parameter">end</span>
+         number end position (optional)
+        </li>
+        <li><span class="parameter">escape</span>
+         boolean: escape output (optional)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        lua tuble as string
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../modules/JSON.html#.array">JSON:array</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <li><pre class="example"><span class="global">print</span>(a:<span class="function-name">tolua</span>()) <span class="comment">--&gt; {1,2,3.45,"test",true,null}</span></pre></li>
+        <li><pre class="example"><span class="global">print</span>(a:<span class="function-name">tolua</span>(<span class="number">0</span>)) <span class="comment">--&gt; {1}</span></pre></li>
+        <li><pre class="example"><span class="global">print</span>(a:<span class="function-name">tolua</span>(<span class="number">4</span>,<span class="number">5</span>)) <span class="comment">--&gt; {true,null]}</span></pre></li>
+        <li><pre class="example"><span class="global">print</span>(a:<span class="function-name">tolua</span>(<span class="number">0</span>,<span class="number">4</span>,<span class="keyword">true</span>)) <span class="comment">--&gt; {1,2,3.45,\"test\",true}</span></pre></li>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "array:totable"></a>
+    <strong>array:totable ()</strong>
+    </dt>
+    <dd>
+    return lua json array as a lua table
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        lua table
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../modules/JSON.html#.array">JSON:array</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">t = a:<span class="function-name">totable</span>()
+<span class="global">print</span>(a) <span class="comment">--&gt; array: 0x627a723b1ad0
+</span><span class="global">print</span>(t) <span class="comment">--&gt; table: 0x627a723b70d0
+</span><span class="global">print</span>(t[<span class="number">4</span>]) <span class="comment">--&gt; test
+</span><span class="global">print</span>(a[<span class="number">3</span>]) <span class="comment">--&gt; test</span></pre>
     </ul>
 
 </dd>
@@ -150,10 +248,10 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">move</span>
-         a valid index to insert item.
+         number: index of item to move.
         </li>
         <li><span class="parameter">to</span>
-         any
+         number: index to move item to
         </li>
     </ul>
 
@@ -491,7 +589,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
-<i style="float:right;">Last updated 2026-04-26 10:32:01 </i>
+<i style="float:right;">Last updated 2026-05-09 15:28:03 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>
