@@ -139,7 +139,6 @@
 
 #define LUA_JSON "JSON"
 
-
 #ifndef __cplusplus
 // LUA LIBS FOR gcc
 #include <lua.h>                               
@@ -206,6 +205,11 @@ typedef void (*NotifyFn)(void* context, event *ev);
 #define DEBUG 0
 //#define USE_THREADS
 
+// SPECIFIC FUNCTION DEBUG FLAGS
+#define SUBSRIPTIONS 0
+#define EVENTS 0
+#define STRINGIFY 0
+
 // --- Disable Event Threading Support ---
 #define LOCK(s)   ((void)0)
 #define UNLOCK(s) ((void)0)
@@ -259,6 +263,31 @@ typedef enum {
 }Type;
 
 typedef enum {
+	ELM, // 0 base
+	ENV  // 1 base
+} idx_t;
+
+typedef enum {
+	newindex,
+	insert,
+	move,
+	reverse,
+	none
+} idx_m;
+
+typedef struct idx_range {
+	uint16_t s;
+	uint16_t e;
+}idx_r;
+
+typedef struct idx_valid {
+	idx_m mode;
+	idx_t type;
+	uint16_t idx;
+	idx_r range;
+}idx_v;
+
+typedef enum {
 	ids,
 	keys,
 }env_field;
@@ -295,7 +324,7 @@ typedef struct elm_rlen {
 
 typedef struct elm_event {
 	json_elm *root;
-	struct Subject *on_newindex, *on_change, *on_env;
+	struct Subject *on_newindex, *on_change, *on_env, *on_mutate;
 	int (*init)		(Subject *s);
 	void (*sub)		(Subject *s, void *ctx, NotifyFn fn);
 	void (*unsub)		(Subject *s, void *ctx, NotifyFn fn);
@@ -317,6 +346,7 @@ struct json_ops {
     int (*del)(lua_State *);
     int (*parse)(lua_State *);
     int (*render)(lua_State *, ref *);
+	int (*towasm)(lua_State*);
 };
 
 // Marshal
@@ -354,58 +384,74 @@ typedef struct ref {
 	marshal *marshal;
 	uint8_t mode;
 	size_t rlen, quoted, nkeys, has_refs;
-	bool isRoot, escape;
+	bool isRoot, escape, needs_state, trusted;
 	const char **Marshal;
+	size_t L_max;
+	size_t start, end;
+
 }ref;
 
 struct json_elm {
-    /* 1. POINTERS (8-byte aligned) */
+    /* POINTERS (8-byte aligned) */
     struct json_elm *root;
     struct json_elm *nested;
     lua_State *L;
     elm_event *event;
     elm_vlen *base;
     
-    /* 2. DATA PAYLOAD */
+    /* DATA PAYLOAD */
     const char *typename;
     const char *key;
     const char *val;
+    const char *dom_id;
     
     // CRITICAL: Pointer to the VTable (Standardized)
-    const struct json_ops *opts; 
+    const struct json_ops *ops; 
 
     uintptr_t env_id;
     size_t nelms;
     size_t klen;
     size_t vlen;
 
-    /* 3. THE COMPRESSED BLOCK (Replaces ~20 bytes with 8 bytes) */
+    /* THE COMPRESSED BLOCK  */
     
-    // A. The Index (16 bits)
+    // The Index (16 bits)
     uint16_t idx;
+	uint16_t range;
 
-    // B. The Mode (8 bits - kept full for safety)
+    // The Mode (8 bits - kept full for safety)
     uint8_t mode;
     
-    // C. The Nibbles (4 bits each - Range 0-15)
+    // The Nibbles (4 bits each - Range 0-15)
     uint8_t type   : 4;
     uint8_t toi    : 4;
     uint8_t ktype  : 4;
     uint8_t vtype  : 4;
 
-    // D. The Flags (1 bit each)
+    // The Flags (1 bit each)
     bool is_nil    : 1;
     bool escape    : 1;
     bool index_json: 1;
     bool stale     : 1;
     bool align     : 1;
+	uint8_t map	   : 1;
     bool is_ref    : 1;
+	bool is_env	   : 1;
 
-    // Padding: Compiler adds ~2 bytes here automatically to reach 8-byte alignment
+    // Padding: Compiler adds 1 byte here automatically to reach 8-byte alignment
 };
 typedef struct json_elm json_elm;
 
-json_elm *check_json_elm(lua_State *L, int pos, bool align);
+/* In struct event (or separate typedef) */
+typedef struct mutation_evt {
+    lua_State *L;
+    json_elm *elm;
+    int key_idx;
+    int val_idx;
+} mutation_evt;
+
+//json_elm *check_json_elm(lua_State *L, int pos, bool align);
+json_elm *check_json_elm(lua_State *L, int pos, idx_m *map);
 int lua_json_is_elm(lua_State *L, int pos);
 bool lua_json_elm_contains(lua_State *L, json_elm *elm, json_elm *nested);
 uint8_t type_of_index(json_elm *elm);
@@ -434,8 +480,11 @@ void lua_json_elm_on_change(void* ctx, event *ev);
 void lua_json_env_on_change(void* ctx, event *ev);
 void lua_json_elm_get_val_length(lua_State *L, json_elm *elm, elm_rlen *erl);
 void lua_json_elm_check_idx(json_elm *elm);
+bool lua_json_idx_inbounds(json_elm *elm, int min, int max, bool is_env);
 void lua_json_elm_init_rlen(json_elm *elm, elm_rlen *erl);
 void update_rlen(json_elm *elm, elm_rlen *erl);
-int lua_json_elm_print_refs(lua_State *L);
-
+bool lua_json_is_printable(lua_State *L);
+uint16_t lua_json_elm_align_idx(json_elm *elm, int pos);
+uint16_t lua_json_elm_push_key(json_elm *elm, uint16_t pos);
+void lua_json_elm_push_idx(json_elm *elm, uint16_t pos);
 #endif 

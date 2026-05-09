@@ -23,19 +23,53 @@
 */
 
 /**
- * render an array as valid json
+ * render an array as valid json array
  * @function array:tojson
+ * @param start number: start position (optional)
+ * @param end number end position (optional)
+ * @param escape boolean: escape output (optional)
  * @return json string 
  * @see JSON:array
  * @usage print(a:tojson()) --> [1,2,3.45,"test",true,null]
+ * @usage print(a:tojson(0)) --> [1]
+ * @usage print(a:tojson(4,5)) --> [true,null]
+ * @usage print(a:tojson(0,4,true)) --> [1,2,3.45,\"test\",true]
+ */
+// static int lua_json_array_tojson(lua_State *L)
+
+/**
+ * render an array as lua table dump
+ * @function array:tolua
+ * @param start number: start position (optional)
+ * @param end number end position (optional)
+ * @param escape boolean: escape output (optional)
+ * @return lua tuble as string 
+ * @see JSON:array
+ * @usage print(a:tolua()) --> {1,2,3.45,"test",true,null}
+ * @usage print(a:tolua(0)) --> {1}
+ * @usage print(a:tolua(4,5)) --> {true,null]}
+ * @usage print(a:tolua(0,4,true)) --> {1,2,3.45,\"test\",true}
+ */
+// static int lua_json_array_tojson(lua_State *L)
+
+/**
+ * return lua json array as a lua table 
+ * @function array:totable
+ * @return lua table
+ * @see JSON:array
+ * @usage t = a:totable()
+ * print(a) --> array: 0x627a723b1ad0
+ * print(t) --> table: 0x627a723b70d0
+ * print(t[4]) --> test
+ * print(a[3]) --> test
  */
 // static int lua_json_array_tojson(lua_State *L)
 
 /**
  * Move an element to position. 
  * @function array:move
- * @param move a valid index to insert item.
- * @param to any
+ * @param move number: index of item to move.
+ * @param to number: index to move item to
  * @return  no value returned
  * @usage local a = JSON:array(1,2,3.45,"test",true,null)
  * print(a:tojson()) --> [1,2,3.45,"test",true,null]

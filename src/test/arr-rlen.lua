@@ -18,5 +18,4 @@ o.obj=nil
 print(o:len())
 print(#o)
 print(o:tojson())
-print(o:get_root())
-print(o.obj2:get_root())
+

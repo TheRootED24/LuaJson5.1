@@ -54,14 +54,24 @@
 
 <h1>Class <code>object</code></h1>
 <p>JSON.object Class</p>
-<p></p>
+<p>
+
+</p>
 
 
 <h2><a href="#Methods">Methods</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#object:tojson">object:tojson ()</a></td>
-	<td class="summary">render an object as valid json</td>
+	<td class="name" nowrap><a href="#object:tojson">object:tojson (start, end, escape)</a></td>
+	<td class="summary">render an object as valid json object</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#object:tolua">object:tolua (start, end, escape)</a></td>
+	<td class="summary">render an object as a serialized lua table</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#object:totable">object:totable ()</a></td>
+	<td class="summary">return lua json object as a lua table</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#object:keys">object:keys ()</a></td>
@@ -106,12 +116,24 @@
     <dl class="function">
     <dt>
     <a name = "object:tojson"></a>
-    <strong>object:tojson ()</strong>
+    <strong>object:tojson (start, end, escape)</strong>
     </dt>
     <dd>
-    render an object as valid json
+    render an object as valid json object
 
 
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">start</span>
+         string or number: start position (optional)
+        </li>
+        <li><span class="parameter">end</span>
+         string or number: end position (optional)
+        </li>
+        <li><span class="parameter">escape</span>
+         bool: escape output (optional)
+        </li>
+    </ul>
 
     <h3>Returns:</h3>
     <ol>
@@ -123,7 +145,81 @@
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null}</span></pre>
+        <li><pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null}</span></pre></li>
+        <li><pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>(<span class="number">0</span>)) <span class="comment">--&gt; {"test":"obj"}</span></pre></li>
+        <li><pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>(<span class="string">"test"</span>, <span class="string">"age"</span>)) <span class="comment">--&gt; {"test":"obj", "age", 99}</span></pre></li>
+        <li><pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>(<span class="number">1</span>,<span class="number">2</span>,<span class="keyword">true</span>)) <span class="comment">--&gt; {\"age\":99,\"root\":false}</span></pre></li>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "object:tolua"></a>
+    <strong>object:tolua (start, end, escape)</strong>
+    </dt>
+    <dd>
+    render an object as a serialized lua table
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">start</span>
+         string or number: start position (optional)
+        </li>
+        <li><span class="parameter">end</span>
+         string or number: end position (optional)
+        </li>
+        <li><span class="parameter">escape</span>
+         bool: escape output (optional)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        string: serialized table
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <li><pre class="example"><span class="global">print</span>(obj:<span class="function-name">tolua</span>()) <span class="comment">--&gt; {test="obj",age=99,root=null,}</span></pre></li>
+        <li><pre class="example"><span class="global">print</span>(obj:<span class="function-name">tolua</span>(<span class="number">0</span>)) <span class="comment">--&gt; {test="obj"}</span></pre></li>
+        <li><pre class="example"><span class="global">print</span>(obj:<span class="function-name">tolua</span>(<span class="string">"test"</span>, <span class="string">"age"</span>)) <span class="comment">--&gt; {test="obj",age=99}</span></pre></li>
+        <li><pre class="example"><span class="global">print</span>(obj:<span class="function-name">tolua</span>(<span class="number">1</span>,<span class="number">2</span>,<span class="keyword">true</span>)) <span class="comment">--&gt; {test=\"obj\",age=99,root=false}</span></pre></li>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "object:totable"></a>
+    <strong>object:totable ()</strong>
+    </dt>
+    <dd>
+    return lua json object as a lua table
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        lua table
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../modules/JSON.html#.object">JSON:object</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> t = o:<span class="function-name">totable</span>()
+<span class="global">print</span>(t) <span class="comment">--&gt; table: 0x627a723b6400
+</span><span class="global">print</span>(o) <span class="comment">--&gt; object: 0x627a723a9d30
+</span><span class="global">print</span>(o[<span class="number">0</span>]) <span class="comment">--&gt; test
+</span><span class="global">print</span>(t[<span class="number">1</span>]) <span class="comment">--&gt; test
+</span><span class="global">print</span>(o[<span class="number">2</span>]) <span class="comment">--&gt; null
+</span><span class="global">print</span>(t[<span class="number">3</span>]) <span class="comment">--&gt; null</span></pre>
     </ul>
 
 </dd>
@@ -200,10 +296,16 @@
          string or number: exisitng key or index to insert the new pair
         </li>
         <li><span class="parameter">new</span>
-                  string: new key
+
+<pre><code>      string: new key
+</code></pre>
+
         </li>
         <li><span class="parameter">value</span>
-                   any:  new value
+
+<pre><code>       any:  new value
+</code></pre>
+
         </li>
     </ul>
 
@@ -391,7 +493,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
-<i style="float:right;">Last updated 2026-04-26 10:32:01 </i>
+<i style="float:right;">Last updated 2026-05-09 15:28:03 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>

@@ -1,6 +1,6 @@
 
 #ifndef LUA_JSON_MARSHAL_H
-#define LUA_JSON_MARHSAL_H
+#define LUA_JSON_MARSHAL_H
 
 #ifndef __cplusplus
 // LUA LIBS FOR gcc

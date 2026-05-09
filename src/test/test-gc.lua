@@ -2,7 +2,7 @@ require "JSON"
 o = JSON:object("test","me")
  print(o:tojson())
 
-p = o:props()
+p = JSON:object()
 p.dom_id="lua-el-1"
 print(p)
 print(p.dom_id)

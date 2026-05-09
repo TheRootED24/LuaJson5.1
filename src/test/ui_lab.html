@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lua UI Lab</title>
+    <style>
+        body { background: #111; color: #eee; font-family: monospace; padding: 20px; }
+        #workspace { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div id="status" style="color: orange;">Loading WASM...</div>
+    
+    <!-- Mount Points -->
+    <div id="controls"></div>
+    <div id="workspace"></div>
+
+    <script>
+        // --- MOCK LOADER (Replace with your real Emscripten JS output) ---
+        // This assumes 'luajson_engine.js' exposes Module and handles the glue.
+        var Module = {
+            onRuntimeInitialized: function() {
+                document.getElementById("status").innerText = "Lua UI Lab Ready";
+                document.getElementById("status").style.color = "#00d97e";
+                
+                // Boot the Lua Script
+                Module.ccall('init_lua', null, []);
+                Module.ccall('run_lua', 'number', ['string'], [luaSource]);
+            }
+        };
+    </script>
+    
+    <!-- Link your real WASM JS here -->
+    <script src="luajson_engine.js"></script>
+
+    <!-- [[ THE LUA APPLICATION ]] -->
+    <script>
+    const luaSource = `
+    local JSON = require("JSON")
+
+    -- 1. BINDING ALIASES
+    -- We map the global C functions to a clean namespace
+    local DOM = {
+        create = js_create_el,
+        append = js_append_child,
+        click  = js_on_click,
+        css    = js_add_css,    -- New
+        style  = js_set_style   -- New
+    }
+
+    -- 2. INJECT GLOBAL CSS (Via C Binding)
+    DOM.css([[
+        .card {
+            width: 120px; height: 80px;
+            background: #222; border: 1px solid #444;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px; color: #888;
+            transition: all 0.2s;
+        }
+        .card-active { border-color: #00d97e; color: #fff; transform: scale(1.1); }
+        .btn-spawn { cursor: pointer; font-weight: bold; }
+    ]])
+
+    -- 3. CREATE CONTROLS
+    -- Note: js_create_el returns a String ID (e.g., "lua-el-0")
+    local btn_id = DOM.create("button", "SPAWN CARD")
+    
+    -- Mount it
+    DOM.append(btn_id, "controls")
+
+    -- Style it (Testing set_style)
+    DOM.style(btn_id, "padding", "15px 30px")
+    DOM.style(btn_id, "background", "transparent")
+    DOM.style(btn_id, "border", "2px solid #00d97e")
+    DOM.style(btn_id, "color", "#00d97e")
+    DOM.style(btn_id, "fontSize", "16px")
+    
+    -- 4. INTERACTION LOOP
+    local count = 1
+    
+    DOM.click(btn_id, function()
+        -- A. Visual Feedback
+        DOM.style(btn_id, "background", "#00d97e")
+        DOM.style(btn_id, "color", "#000")
+        
+        -- B. Create Card
+        local card_id = DOM.create("div", "Card " .. count)
+        
+        -- C. Apply CSS Class (via attribute or style)
+        -- Since we don't have set_class yet, we rely on inline style or the CSS we injected
+        DOM.style(card_id, "className", "card") -- JS property hack
+        
+        -- D. Apply Specific Styles
+        DOM.style(card_id, "borderLeft", "4px solid #00d97e")
+        DOM.style(card_id, "marginTop", "10px")
+        
+        -- E. Mount
+        DOM.append(card_id, "workspace")
+        
+        count = count + 1
+    end)
+    `;
+    </script>
+</body>
+</html>

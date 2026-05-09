@@ -21,15 +21,16 @@
 
 #ifndef __cplusplus
 // LUA LIBS FOR gcc
-#include <lua.h>                               
-#include <lauxlib.h>                           
+#include <lua.h>
+#include <lauxlib.h>
 #include <lualib.h>
 #endif
 
 #ifdef __cplusplus
 // LUA LIBS FOR g++
 #include <lua.hpp>
-extern "C" {
+extern "C"
+{
 #endif
 // STD LIBS
 #include <stdio.h>
@@ -38,7 +39,6 @@ extern "C" {
 #include <stdint.h>
 #include <stdlib.h>
 #include <errno.h>
-
 
 #include <stddef.h>
 #include <stdatomic.h>
@@ -51,40 +51,43 @@ extern "C" {
 }
 #endif
 
-typedef enum {
-    ON_NEWINDEX,
-    ON_INDEX,
-    ON_CHANGE,
-    ON_ENV
-}event_type;
+typedef enum
+{
+	ON_NEWINDEX,
+	ON_INDEX,
+	ON_CHANGE,
+	ON_ENV
+} event_type;
 
-typedef struct event {
-    event_type type;
-    void *data;
-}event;
+typedef struct event
+{
+	event_type type;
+	void *data;
+} event;
 
+typedef void (*NotifyFn)(void *context, event *ev);
 
-typedef void (*NotifyFn)(void* context, event *ev);
-
-typedef struct ObserverNode {
-    void* context;
-    NotifyFn callback;
-    struct ObserverNode* next;
+typedef struct ObserverNode
+{
+	void *context;
+	NotifyFn callback;
+	struct ObserverNode *next;
 } ObserverNode;
 
-typedef struct Subject {
-    event *event;
-    ObserverNode* observers;
+typedef struct Subject
+{
+	event *event;
+	ObserverNode *observers;
 #ifdef USE_THREADS
-    mtx_t lock;
+	mtx_t lock;
 #endif
 } Subject;
 
-int subject_init(Subject* s);
-void subject_subscribe(Subject* s, void* context, NotifyFn callback);
-void subject_unsubscribe(Subject* s, void* context, NotifyFn callback);
-void subject_set_values(Subject* s, event *ev);
-void subject_cleanup(Subject* s);
-void print_subscribers(Subject* s);
+int subject_init(Subject *s);
+void subject_subscribe(Subject *s, void *context, NotifyFn callback);
+void subject_unsubscribe(Subject *s, void *context, NotifyFn callback);
+void subject_set_values(Subject *s, event *ev);
+void subject_cleanup(Subject *s);
+void print_subscribers(Subject *s);
 
 #endif

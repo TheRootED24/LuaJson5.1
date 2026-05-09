@@ -55,7 +55,7 @@ arr[#arr] = o
 print(arr:tojson())
 arr=nil
 
-arr = JSON.parse([[
+arr = JSON:parse([[
 	{
 		"ip":"192.168.1.1",
 		"name":"teds",
