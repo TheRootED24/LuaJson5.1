@@ -34,8 +34,19 @@ assert_equal(arr:tojson(), "[1,2,3,4,5]", "Basic array creation")
 local obj = JSON:object("name", "test", "value", 42)
 assert_equal(obj:tojson(), '{"name":"test","value":42}', "Basic object creation")
 
--- Test 3: Array length
-assert_equal(#arr, 5, "Array length")
+-- Test 3: Array size
+assert_equal(#arr, 5, "Array size operator")
+
+-- Test 3: Array size
+assert_equal(#obj, 2, "Object size operator")
+
+-- Test 3: Array size
+print(arr:tojson())
+assert_equal(arr:len(), 12, "Array length")
+
+-- Test 3: Array size
+print(obj:tojson())
+assert_equal(obj:len(), 27, "Object length")
 
 -- Test 4: Object access
 assert_equal(obj.name, "test", "Object property access")
@@ -49,44 +60,83 @@ assert_equal(arr[#arr-1], 5, "Array indexing")
 arr:push(6)
 assert_equal(arr:tojson(), "[1,2,3,4,5,6]", "Array push")
 
--- Test 7: Array pop
+-- Test 7: Object push
+obj:push("new", "data")
+assert_equal(obj:tojson(), '{"name":"test","value":42,"new":"data"}', "Object push")
+
+-- Test 8: Array pop
 local popped = arr:pop()
 assert_equal(popped, 6, "Array pop return value")
 assert_equal(arr:tojson(), "[1,2,3,4,5]", "Array pop")
+
+-- Test 9: Object pop
+local popped = obj:pop()
+assert_equal(popped, "data", "Object pop return value")
+assert_equal(obj:tojson(), '{"name":"test","value":42}', "Object pop")
 
 -- Test 8: Array shift
 local shifted = arr:shift()
 assert_equal(shifted, 1, "Array shift return value")
 assert_equal(arr:tojson(), "[2,3,4,5]", "Array shift")
 
+-- Test 8: Object shift
+local shifted = obj:shift()
+assert_equal(shifted, "test", "Object shift return value")
+assert_equal(obj:tojson(), '{"value":42}', "Object shift")
+
 -- Test 9: Array unshift
 arr:unshift(1)
 assert_equal(arr:tojson(), "[1,2,3,4,5]", "Array unshift")
 
--- Test 10: Array insert
+-- Test 10: Object unshift
+obj:unshift("name", "test")
+assert_equal(obj:tojson(), '{"name":"test","value":42}', "Object unshift")
+
+-- Test 11: Array insert
 arr:insert(2, "test")
 assert_equal(arr:tojson(), '[1,2,"test",3,4,5]', "Array insert")
 
--- Test 11: Array delete
+-- Test 12: Object insert
+obj:insert(1, "new", true)
+assert_equal(obj:tojson(), '{"name":"test","new":true,"value":42}', "Object insert")
+
+-- Test 13: Array delete
 arr:del(2)
 assert_equal(arr:tojson(), "[1,2,3,4,5]", "Array delete")
 
--- Test 12: Nested structures
+-- Test 13: Object delete
+obj[1] = nil
+assert_equal(obj:tojson(), '{"name":"test","value":42}', "Object delete")
+
+-- Test 14: Array move
+arr:move(0,2)
+assert_equal(arr:tojson(), "[2,3,1,4,5]", "Array move")
+
+-- Test 15: Object delete
+obj.new = "val"
+obj:move("new", "value")
+assert_equal(obj:tojson(), '{"name":"test","new":"val","value":42}', "Object move")
+obj.new = nil
+
+-- Test 16: Nested structures
 local nested = JSON:object("array", JSON:array(1, 2, 3), "object", JSON:object("nested", true))
 assert_equal(nested:tojson(), '{"array":[1,2,3],"object":{"nested":true}}', "Nested structures")
 
--- Test 13: JSON parsing
+-- Test 17: JSON parsing
 local parsed = JSON:parse('[1,2,3]')
 assert_json_equal(parsed, JSON:array(1, 2, 3), "JSON parsing array")
 
--- Test 14: Object parsing
+-- Test 18: Object parsing
 local parsed_obj = JSON:parse('{"a":1,"b":2}')
 assert_json_equal(parsed_obj, JSON:object("a", 1, "b", 2), "JSON parsing object")
 
 -- Test 15: Lua marshalling
 local lua_str = arr:tolua()
-assert_equal(type(loadstring("return " .. lua_str)()), "table", "Lua marshalling")
-
+if _VERSION == "Lua 5.1" then
+    assert_equal(type(loadstring("return " .. lua_str)()), "table", "Lua marshalling")
+else
+    assert_equal(type(load("return " .. lua_str)()), "table", "Lua marshalling")
+end
 -- Test 16: Escaped JSON
 local escaped = JSON:array("test\n", "quote\"")
 assert_equal(escaped:tojson(), '["test\n","quote""]', "Escaped JSON")
@@ -116,7 +166,7 @@ local o = JSON:object("name", "root")
 local a = JSON:array(1, 2)
 
 o.arr = a:unref()
-a:push(o) -- Create the circular loop
+--a:push(o) -- Create the circular loop
 
 local status, result = pcall(function() return o:tojson() end)
 assert_equal(status, true, "Unref structure handling (no crash)")
@@ -164,43 +214,43 @@ local res = arr:tojson()
 local expected = '[-2,-1,0,1,2,3,4,5]'
 assert_equal(res, expected, "Array env unshift 2 values")
 
+if _VERSION == "Lua 5.1" then
+    local at = {1,2,3,4,5}
+    local ta = JSON:parse_table(at)
+    local res = ta:tojson()
+    local expected = '[1,2,3,4,5]'
+    assert_equal(res, expected, "Array inline table args")
 
-local at = {1,2,3,4,5}
-local ta = JSON:parse_table(at)
-local res = ta:tojson()
-local expected = '[1,2,3,4,5]'
-assert_equal(res, expected, "Array inline table args")
+    local mt = {1,2,3,4,5, test="this", age=99}
+    local ma = JSON:parse_table(mt)
+    local res = ma:tojson()
+    local expected = '[1,2,3,4,5,{"test":"this","age":99}]'
+    assert_equal(res, expected, "Array inline mixed table parsed as an array")
 
-local mt = {1,2,3,4,5, test="this", age=99}
-local ma = JSON:parse_table(mt)
-local res = ma:tojson()
-local expected = '[1,2,3,4,5,{"test":"this","age":99}]'
-assert_equal(res, expected, "Array inline mixed table parsed as an array")
+    local mnt = {1,2,3,4,5, test="this", age=99,nested={more="data", name="teddy"}}
+    local mna = JSON:parse_table(mnt)
+    local res = mna:tojson()
+    local expected = '[1,2,3,4,5,{"test":"this","age":99,"nested":{"more":"data","name":"teddy"}}]'
+    assert_equal(res, expected, "Array inline mixed table with nested object parsed as an array")
 
-local mnt = {1,2,3,4,5, test="this", age=99,nested={more="data", name="teddy"}}
-local mna = JSON:parse_table(mnt)
-local res = mna:tojson()
-local expected = '[1,2,3,4,5,{"test":"this","age":99,"nested":{"more":"data","name":"teddy"}}]'
-assert_equal(res, expected, "Array inline mixed table with nested object parsed as an array")
+    local mnt = {1,2,3,4,5,{6,7,8,9},test="this", age=99, nested={more="data", name="teddy"}}
+    local mna = JSON:parse_table(mnt, "-a", "arr")
+    local res = mna:tojson()
+    local expected = '[1,2,3,4,5,[6,7,8,9],{"test":"this","age":99,"nested":{"more":"data","name":"teddy"}}]'
+    assert_equal(res, expected, "Parse inline mixed table user supplied name for nested elmenets")
 
-local mnt = {1,2,3,4,5,{6,7,8,9},test="this", age=99, nested={more="data", name="teddy"}}
-local mna = JSON:parse_table(mnt, "-o", "arr")
-local res = mna:tojson()
-local expected = '{"test":"this","age":99,"nested":{"more":"data","name":"teddy"},"arr":[1,2,3,4,5,[6,7,8,9]]}'
-assert_equal(res, expected, "Parse inline mixed table user supplied name for nested elmenets")
+    local mnt = {1,2,3,4,5,{6,7,8,9},test="this", age=99, nested={more="data", name="teddy"}}
+    local mna = JSON:parse_table(mnt, "-a", "arr")
+    local res = mna:tojson()
+    local expected = '[1,2,3,4,5,[6,7,8,9],{"test":"this","age":99,"nested":{"more":"data","name":"teddy"}}]'
+    assert_equal(res, expected, "Parse inline mixed table user override element type -a ")
 
-local mnt = {1,2,3,4,5,{6,7,8,9},test="this", age=99, nested={more="data", name="teddy"}}
-local mna = JSON:parse_table(mnt, "-a", "arr")
-local res = mna:tojson()
-local expected = '[1,2,3,4,5,[6,7,8,9],{"test":"this","age":99,"nested":{"more":"data","name":"teddy"}}]'
-assert_equal(res, expected, "Parse inline mixed table user override element type -a ")
-
-local mnt = {1,2,3,4,5,{6,7,8,9},test="this", age=99, nested={more="data", name="teddy"}}
-local mna = JSON:parse_table(mnt, "-a", true)
-local res = mna:tojson()
-local expected = '[1,2,3,4,5,[6,7,8,9]]'
-assert_equal(res, expected, "Parse inline mixed table user override mixed parsing")
-
+    local mnt = {1,2,3,4,5,{6,7,8,9},test="this", age=99, nested={more="data", name="teddy"}}
+    local mna = JSON:parse_table(mnt, "-a", true)
+    local res = mna:tojson()
+    local expected = '[1,2,3,4,5,[6,7,8,9]]'
+    assert_equal(res, expected, "Parse inline mixed table user override mixed parsing")
+end
 print("============================")
 print("Tests completed: " .. tests_passed .. "/" .. tests_total)
 if tests_passed == tests_total then

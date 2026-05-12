@@ -4,7 +4,7 @@
  *   Copyright (C) 2026 TheRootED24 <TheRootED24@gmail.com>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in JSONliance with the License.
+ *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
@@ -17,163 +17,148 @@
  */
  // ####################################################################################### API DOCUMENTATION ################################################################################################### //
 
- /***
-*JSON.object Class
-@classmod object
-*/
+/***
+ * Ordered JSON object.
+ *
+ * Objects preserve insertion order and allow key-based or position-based
+ * access. Numeric indexes address ordered key/value pairs; string indexes
+ * address named fields.
+ *
+ * @classmod object
+ */
 
 /**
- * render an object as valid json object
+ * Render the object as JSON.
  * @function object:tojson
- * @param start string or number: start position (optional)
- * @param end string or number: end position (optional)
- * @param escape bool: escape output (optional)
- * @return string: json string 
- * 
- * @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
- * @usage print(obj:tojson(0)) --> {"test":"obj"}
- * @usage print(obj:tojson("test", "age")) --> {"test":"obj", "age", 99}
- * @usage print(obj:tojson(1,2,true)) --> {\"age\":99,\"root\":false}
+ * @param[opt] start string|number Start key or ordered index.
+ * @param[opt] finish string|number End key or ordered index.
+ * @param[opt] escape boolean Escape quotes in the returned string.
+ * @return string JSON object text.
+ * @usage local obj = JSON:object("name", "test", "value", 42, "root", null)
+ * print(obj:tojson())              --> {"name":"test","value":42,"root":null}
+ * print(obj:tojson("name", "value")) --> {"name":"test","value":42}
  */
-//static int lua_json_object_tojson(lua_State *L) 
 
 /**
- * render an object as a serialized lua table
+ * Render the object as a Lua table literal string.
  * @function object:tolua
- * @param start string or number: start position (optional)
- * @param end string or number: end position (optional)
- * @param escape bool: escape output (optional)
- * @return string: serialized table 
- * 
- * @usage print(obj:tolua()) --> {test="obj",age=99,root=null,}
- * @usage print(obj:tolua(0)) --> {test="obj"}
- * @usage print(obj:tolua("test", "age")) --> {test="obj",age=99}
- * @usage print(obj:tolua(1,2,true)) --> {test=\"obj\",age=99,root=false}
+ * @param[opt] start string|number Start key or ordered index.
+ * @param[opt] finish string|number End key or ordered index.
+ * @param[opt] escape boolean Escape quotes in the returned string.
+ * @return string Lua table literal.
  */
-//static int lua_json_object_tojson(lua_State *L) 
 
 /**
- * return lua json object as a lua table
+ * Convert the object to a Lua table.
  * @function object:totable
- * @return lua table
- * @see JSON:object
- * @usage local t = o:totable()
- * print(t) --> table: 0x627a723b6400
- * print(o) --> object: 0x627a723a9d30
- * print(o[0]) --> test
- * print(t[1]) --> test
- * print(o[2]) --> null
- * print(t[3]) --> null
+ * @return table Lua table copy.
  */
-// static int lua_json_array_tojson(lua_State *L)
 
 /**
- * Create a new array containing the keys of an object
+ * Return the rendered JSON byte length.
+ * @function object:len
+ * @return number Rendered JSON length.
+ */
+
+/**
+ * Return the rendered length for a specific output mode.
+ * @function object:rlen
+ * @param mode string `"-j"` for JSON or `"-l"` for Lua output.
+ * @param[opt] escape boolean Include quote escaping in the length.
+ * @return number Rendered length.
+ */
+
+/**
+ * Switch numeric API calls between zero-based and one-based indexing.
+ * @function object:json_base
+ * @param base number Pass `0` for JSON-style zero-based indexes or `1` for Lua-style one-based indexes.
+ */
+
+/**
+ * Create an array containing this object's keys in insertion order.
  * @function object:keys
- * @return array: json array of the objects keys 
- * @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
- * local keys = obj:keys() 
- * print(keys:tojson())--> ["test","age","root"]
+ * @return array Array of keys.
+ * @usage local keys = obj:keys()
+ * print(keys:tojson()) --> ["name","value","root"]
  */
-//static int lua_json_object_keys(lua_State *L) 
-
 
 /**
- * move an existing key/value pair to any exisiting index
+ * Iterate over key/value pairs until the callback returns a non-nil value.
+ * @function object:foreach
+ * @param fn function Called as `fn(key, value)`.
+ * @return any First non-nil callback result, or no value when iteration completes.
+ */
+
+/**
+ * Move an existing key/value pair to another ordered position.
  * @function object:move
- *  @param  move string or number: exisiting key or index of pair to move
- *  @param to string or number: exisiting key or index a pair to start the shift right
- *  @return no value retured.
- * 
- * @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
- * obj:move("root", "test")
- * print(obj:tojson()) --> {"root":null,"test":"obj","age":99}
+ * @param from string|number Existing key or ordered index.
+ * @param to string|number Destination key or ordered index.
  */
-// static int lua_json_object_move(lua_State *L)
 
 /**
- * insert new key/value pair at any existing position
+ * Insert a key/value pair at an ordered position.
  * @function object:insert
- * @param at string or number: exisitng key or index to insert the new pair
- * @param new          string: new key
- * @param value           any:  new value
- * @return number: updated size of object.
- * 
- * @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
- * local s = obj:insert(0, "new","value")
- * print(obj:tojson()) --> {"new":"value","test":"obj","root":null,"age":99}
- * print(s) --> 4 
+ * @param at string|number Existing key or ordered index to insert before.
+ * @param key string New key.
+ * @param value any New value.
+ * @return number Updated pair count.
  */
-// static int lua_json_object_insert(lua_State *L)
 
 /**
- * push new key/value pair to end of object
+ * Append a key/value pair to the object.
  * @function object:push
- * @param key string: new key
- * @param value any: new value
- * @return number: updated size of object.
- * 
- * @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
- * local s = obj:push("new","value")
- * print(obj:tojson()) --> {"test":"obj","age":99,"root":null,"new":"value"}
- * print(s) --> 4
+ * @param key string New key.
+ * @param value any New value.
  */
-// static int lua_json_object_push(lua_State *L)
 
 /**
- * pop the last key/value pair from object
+ * Remove and return the last value.
  * @function object:pop
- * @return any: the popped value.
- * 
- * @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
- * local p = obj:pop()
- * print(obj:tojson()) --> {"test":"obj","age":99}
- * print(p) --> null
+ * @return any Removed value, or `nil` when the object is empty.
  */
-// static int lua_json_object_pop(lua_State *L)
 
 /**
- * Remove the first key/value pair from object. 
+ * Remove and return the first value.
  * @function object:shift
- * @return any: the shifted value.
-*  @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
- * local s = obj:shift()
- * print(obj:tojson()) --> {"age":99,"root":null}
- * print(s) --> obj
+ * @return any Removed value, or `nil` when the object is empty.
  */
-// static int lua_json_object_shift(lua_State *L)
-
- /**
- * add one or more key/value pairs to the beginning of an object.
- * @function object:unshift
- * @param key string: new key
- * @param val any: new value
- * @param[opt] ...  additional pairs
- * @return number: the updated object size.
- * @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null}
- * local npairs = obj:unshift("name", "teddy", "id", 101, "admin", false)) 
- * print(obj:tojson()) --> {"name":"teddy","id":101,"admin":false,"age":99,"root":null}
- * print(npairs) --> 5
- */
-//static int lua_json_object_unshift(lua_State *L)
 
 /**
- * reverses the indexes of an object key/value pairs.  
- * @function object:reverse
- * @param from string or number: key or index to start reversal. (optional) 
- * @param to string or number: key or index to end of reversal. (optional)
- * @return no value returned
- * @usage print(obj:tojson()) --> {"test":"obj","age":99,"root":null, "name":"teddy"}
- * npairs = obj:reverse("test", "root")) 
- * print(obj:tojson()) --> {""root":null,"age":99,test":"obj","name":"teddy"}
+ * Add one or more key/value pairs to the beginning of the object.
+ * @function object:unshift
+ * @param key string First key.
+ * @param value any First value.
+ * @param[opt] ... any Additional key/value pairs.
+ * @return number Updated pair count.
  */
-//static int lua_json_object_reverse(lua_State *L)
+
+/**
+ * Reverse all or part of the ordered key list.
+ * @function object:reverse
+ * @param[opt] from string|number Start key or ordered index.
+ * @param[opt] to string|number End key or ordered index.
+ */
+
+/**
+ * Create a new reference to the same backing object.
+ * @function object:ref
+ * @return object Referenced object.
+ */
+
+/**
+ * Create an independent copy of the object.
+ * @function object:unref
+ * @return object Copied object.
+ */
 
 
 // ####################################################################################### END API DOCUMENTATION ############################################################################################### //
 
 #ifndef LUA_JSON_OBJECT_H
 #define LUA_JSON_OBJECT_H
+
+#define JSON_OBJECT_METHODS "JSON.object"
 
 #ifndef __cplusplus
 // LUA LIBS FOR gcc
@@ -202,6 +187,7 @@ extern "C" {
 }
 #endif
 
+#define KEYS "keys"
 typedef struct ref ref;
 typedef struct json_elm json_elm;
 typedef struct elm_ids elm_ids;
@@ -212,5 +198,7 @@ extern const char *marshal_json[], *marshal_lua[], *fields[];
 void lua_json_open_object(lua_State *L);
 int lua_json_object(lua_State *L);
 int lua_json_elm_parse_object(lua_State *L);
+int lua_json_object_pop(lua_State *L);
+int lua_json_object_reverse(lua_State *L);
 
 #endif

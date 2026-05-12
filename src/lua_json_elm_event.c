@@ -15,7 +15,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
+
 #include "lua_json_elm_event.h"
 
 // --- API Implementation ---
@@ -60,17 +60,6 @@ void subject_set_values(Subject* s, event *ev) {
     while (curr) {
         curr->callback(curr->context, ev);
         curr = curr->next;
-    }
-    UNLOCK(s);
-}
-
-void print_subscribers(Subject* s) {
-    LOCK(s);
-    ObserverNode* curr = s->observers;
-    while (curr) {
-        ObserverNode* next = curr->next;
-        
-        curr = next;
     }
     UNLOCK(s);
 }

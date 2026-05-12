@@ -1,0 +1,50 @@
+#!/usr/bin/env lua5.4 
+
+local JSON = require "JSON"
+
+function main(...)
+    -- 1. Look for the flag at index 1, default to object "-o" if missing
+    local flag = "-o"
+    local start_idx = 1
+
+    if arg[1] == "-o" or arg[1] == "-a" then
+        flag = arg[1]
+        start_idx = 2 -- Skip the flag and start reading properties at index 2
+    end
+
+    local parent_table = {}
+    local child_array = {}
+    local in_child_array = false
+
+    -- 2. Build the nested layout from flat terminal inputs
+    local i = start_idx
+    while i <= #arg do
+        local token = arg[i]
+
+        if token == "arr" then
+            -- We hit the nested boundary marker!
+            in_child_array = true
+            parent_table["arr"] = child_array
+            i = i + 1 -- Move to the first element of the array
+        elseif in_child_array then
+            -- Everything after "arr" is a value in the child array
+            table.insert(child_array, tonumber(token) or token)
+            i = i + 1
+        else
+            -- Process standard object key-value pairs
+            local key = token
+            local val = arg[i+1]
+            if key and val then
+                parent_table[key] = tonumber(val) or val
+            end
+            i = i + 2 -- Skip key and value
+        end
+    end
+
+    -- 3. Pass the structured nested table to your automated parser
+    local res = JSON:parse_table(parent_table, flag)
+    print(res:tobash())
+    return res:tobash()
+end
+
+main(...)

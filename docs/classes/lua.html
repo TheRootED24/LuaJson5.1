@@ -24,7 +24,7 @@
 
 <div id="navigation">
 <br/>
-<h1>LuaJson5.1</h1>
+<h1>LuaJson</h1>
 
 
 <ul>
@@ -53,25 +53,28 @@
 <div id="content">
 
 <h1>Class <code>lua</code></h1>
-<p>JSON.lua class</p>
-<p>
-
-</p>
+<p>Lua table conversion helpers.</p>
+<p> These functions are registered on the <a href="../modules/JSON.html#">JSON</a> module. <a href="../classes/lua.html#JSON:parse_table">parse_table</a> is an
+ alias for <a href="../classes/lua.html#JSON:parse_lua">parse_lua</a>; element instances expose <code>:totable()</code> and <code>:tolua()</code>.</p>
 
 
 <h2><a href="#Functions">Functions</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#.parse_lua">.parse_lua (tname, t)</a></td>
-	<td class="summary">Convert a lua table to a lua json element.</td>
+	<td class="name" nowrap><a href="#JSON:parse_lua">JSON:parse_lua (t[, as[, mixed_name[, no_mixed]]])</a></td>
+	<td class="summary">Convert a Lua table to a LuaJson element.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#.stringify_lua">.stringify_lua (tname, elm)</a></td>
-	<td class="summary">Seriaslize a lua table into a parseable json string</td>
+	<td class="name" nowrap><a href="#JSON:parse_table">JSON:parse_table (t[, as[, mixed_name[, no_mixed]]])</a></td>
+	<td class="summary">Alias for <a href="../classes/lua.html#JSON:parse_lua">JSON:parse_lua</a>.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#.tolua">.tolua (tname, elm)</a></td>
-	<td class="summary">Convert a lua json element to a table.</td>
+	<td class="name" nowrap><a href="#JSON:stringify_lua">JSON:stringify_lua (value[, mode[, escape]])</a></td>
+	<td class="summary">Serialize a Lua table or LuaJson element.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#array:totable">array:totable ()</a></td>
+	<td class="summary">Convert a LuaJson element to a Lua table.</td>
 	</tr>
 </table>
 
@@ -83,109 +86,145 @@
     Methods
     <dl class="function">
     <dt>
-    <a name = ".parse_lua"></a>
-    <strong>.parse_lua (tname, t)</strong>
+    <a name = "JSON:parse_lua"></a>
+    <strong>JSON:parse_lua (t[, as[, mixed_name[, no_mixed]]])</strong>
     </dt>
     <dd>
-    Convert a lua table to a lua json element.
+    Convert a Lua table to a LuaJson element.
 
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">tname</span>
-         name of new element
-        </li>
         <li><span class="parameter">t</span>
-         lua table
+         table Table to convert.
+        </li>
+        <li><span class="parameter">as</span>
+         string <code>&quot;-a&quot;</code> for array, <code>&quot;-o&quot;</code> for object, <code>&quot;-p&quot;</code> for parse mode,
+ or an option containing <code>&quot;v&quot;</code> for verbose output.
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">mixed_name</span>
+         string Field name used when preserving mixed-key data.
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">no_mixed</span>
+         boolean When true, ignore mixed-key fixups.
+         (<em>optional</em>)
         </li>
     </ul>
 
     <h3>Returns:</h3>
     <ol>
 
-        an initialized lua json array or object.
+        array|object Converted JSON element.
     </ol>
 
 
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example"><span class="keyword">local</span> t = {<span class="number">1</span>,<span class="number">2</span>,<span class="number">3.45</span>,<span class="string">"test"</span>,<span class="keyword">true</span>} <span class="comment">--&gt;
-</span><span class="global">print</span>(t) <span class="comment">--&gt; table: 0x5c92968f1c90
-</span>
-<span class="keyword">local</span> ta = JSON.<span class="function-name">parse_lua</span>(ta, t)
-<span class="global">print</span>(ta) <span class="comment">--&gt; array: 0x5c92968f09a8
-</span><span class="global">print</span>(ta[<span class="number">0</span>])  <span class="comment">--&gt; 1
-</span><span class="global">print</span>(ta[<span class="number">2</span>])  <span class="comment">--&gt; 3.45
-</span><span class="global">print</span>(ta[#ta]) <span class="comment">--&gt; true</span></pre>
+        <pre class="example"><span class="keyword">local</span> t = {<span class="number">1</span>, <span class="number">2</span>, <span class="number">3.45</span>, <span class="string">"test"</span>, <span class="keyword">true</span>}
+<span class="keyword">local</span> a = JSON:<span class="function-name">parse_lua</span>(t, <span class="string">"-a"</span>)
+<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [1,2,3.45,"test",true]</span></pre>
     </ul>
 
 </dd>
     <dt>
-    <a name = ".stringify_lua"></a>
-    <strong>.stringify_lua (tname, elm)</strong>
+    <a name = "JSON:parse_table"></a>
+    <strong>JSON:parse_table (t[, as[, mixed_name[, no_mixed]]])</strong>
     </dt>
     <dd>
-    Seriaslize a lua table into a parseable json string
+    Alias for <a href="../classes/lua.html#JSON:parse_lua">JSON:parse_lua</a>.
 
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">tname</span>
-         name of new element
+        <li><span class="parameter">t</span>
+         table Table to convert.
         </li>
-        <li><span class="parameter">elm</span>
-         lua json element
+        <li><span class="parameter">as</span>
+         string Conversion option.
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">mixed_name</span>
+         string Field name used when preserving mixed-key data.
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">no_mixed</span>
+         boolean When true, ignore mixed-key fixups.
+         (<em>optional</em>)
         </li>
     </ul>
 
     <h3>Returns:</h3>
     <ol>
 
-        lua table
+        array|object Converted JSON element.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "JSON:stringify_lua"></a>
+    <strong>JSON:stringify_lua (value[, mode[, escape]])</strong>
+    </dt>
+    <dd>
+    Serialize a Lua table or LuaJson element.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">value</span>
+         table|array|object Value to serialize.
+        </li>
+        <li><span class="parameter">mode</span>
+         string <code>&quot;json&quot;</code> for JSON output or <code>&quot;lua&quot;</code> for Lua table output.
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">escape</span>
+         boolean Escape quotes in the rendered string.
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        string Serialized value.
     </ol>
 
 
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example"><span class="keyword">local</span> t = { <span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span> }
-s = JSON.<span class="function-name">stringify</span>(s, t)
-<span class="global">print</span>(s) <span class="comment">--&gt; [1,2,3,4,5]</span></pre>
+        <pre class="example"><span class="keyword">local</span> t = {<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>}
+ <span class="global">print</span>(JSON:<span class="function-name">stringify_lua</span>(t, <span class="string">"json"</span>)) <span class="comment">--&gt; [1,2,3,4,5]</span></pre>
     </ul>
 
 </dd>
     <dt>
-    <a name = ".tolua"></a>
-    <strong>.tolua (tname, elm)</strong>
+    <a name = "array:totable"></a>
+    <strong>array:totable ()</strong>
     </dt>
     <dd>
-    Convert a lua json element to a table.
+    Convert a LuaJson element to a Lua table.
 
 
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">tname</span>
-         table name
-        </li>
-        <li><span class="parameter">elm</span>
-         lua json element
-        </li>
-    </ul>
 
     <h3>Returns:</h3>
     <ol>
 
-        lua table
+        table Lua table copy.
     </ol>
 
 
-
-    <h3>Usage:</h3>
+    <h3>See also:</h3>
     <ul>
-        <pre class="example"><span class="global">print</span>(o:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"some":"data","age":99}
-</span> <span class="global">print</span>(o:<span class="function-name">tolua</span>()) <span class="comment">--&gt;  {some="data",age=99}</span></pre>
+         <a href="../classes/object.html#object:totable">object:totable</a>
     </ul>
+
 
 </dd>
 </dl>
@@ -195,7 +234,7 @@ s = JSON.<span class="function-name">stringify</span>(s, t)
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
-<i style="float:right;">Last updated 2026-05-09 15:28:03 </i>
+<i style="float:right;">Last updated 2026-05-21 22:25:01 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>

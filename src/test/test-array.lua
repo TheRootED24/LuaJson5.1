@@ -55,6 +55,8 @@ arr[#arr] = o
 print(arr:tojson())
 arr=nil
 
+local user = '{"id":0,"name":"Elijah","city":"Austin","age":78,"friends":[{"name":"Michelle","hobbies":["Watching Sports","Reading","Skiing & Snowboarding"]},{"name":"Robert","hobbies":["Traveling","Video Games"]}]}'
+
 arr = JSON:parse([[
 	{
 		"ip":"192.168.1.1",

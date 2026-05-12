@@ -4,7 +4,7 @@
  *   Copyright (C) 2026 TheRootED24 <TheRootED24@gmail.com>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in JSONliance with the License.
+ *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
@@ -18,49 +18,56 @@
  // ####################################################################################### API DOCUMENTATION ################################################################################################### //
 
 
- /**
-*JSON.lua class
-@classmod lua
-*/
-
 /**
- * Convert a lua table to a lua json element.
- * @function .parse_lua
- * @param tname name of new element
- * @param t lua table
- * @return an initialized lua json array or object.
- * @usage local t = {1,2,3.45,"test",true} --> 
- * print(t) --> table: 0x5c92968f1c90
+ * Lua table conversion helpers.
  *
- * local ta = JSON.parse_lua(ta, t)
- * print(ta) --> array: 0x5c92968f09a8
- * print(ta[0])  --> 1
- * print(ta[2])  --> 3.45
- * print(ta[#ta]) --> true
+ * These functions are registered on the `JSON` module. `parse_table` is an
+ * alias for `parse_lua`; element instances expose `:totable()` and `:tolua()`.
+ *
+ * @classmod lua
  */
-
- /**
- * Seriaslize a lua table into a parseable json string
- * @function .stringify_lua
- * @param tname name of new element
- * @param elm lua json element
- * @usage local t = { 1,2,3,4,5 }
- * s = JSON.stringify(s, t)
- * print(s) --> [1,2,3,4,5]
- * @return lua table
- */
-//int lua_json_lua_stringify(lua_State *L)
 
 /**
- * Convert a lua json element to a table.
- * @function .tolua
- * @param tname table name
- * @param elm lua json element
- * @return lua table
- * @usage  print(o:tojson()) --> {"some":"data","age":99}
- * print(o:tolua()) -->  {some="data",age=99}
+ * Convert a Lua table to a LuaJson element.
+ * @function JSON:parse_lua
+ * @param t table Table to convert.
+ * @param[opt] as string `"-a"` for array, `"-o"` for object, `"-p"` for parse mode,
+ * or an option containing `"v"` for verbose output.
+ * @param[opt] mixed_name string Field name used when preserving mixed-key data.
+ * @param[opt] no_mixed boolean When true, ignore mixed-key fixups.
+ * @return array|object Converted JSON element.
+ * @usage local t = {1, 2, 3.45, "test", true}
+ * local a = JSON:parse_lua(t, "-a")
+ * print(a:tojson()) --> [1,2,3.45,"test",true]
  */
-//int lua_json_tolua(lua_State *L)
+
+/**
+ * Alias for @{JSON:parse_lua}.
+ * @function JSON:parse_table
+ * @param t table Table to convert.
+ * @param[opt] as string Conversion option.
+ * @param[opt] mixed_name string Field name used when preserving mixed-key data.
+ * @param[opt] no_mixed boolean When true, ignore mixed-key fixups.
+ * @return array|object Converted JSON element.
+ */
+
+/**
+ * Serialize a Lua table or LuaJson element.
+ * @function JSON:stringify_lua
+ * @param value table|array|object Value to serialize.
+ * @param[opt] mode string `"json"` for JSON output or `"lua"` for Lua table output.
+ * @param[opt] escape boolean Escape quotes in the rendered string.
+ * @return string Serialized value.
+ * @usage local t = {1, 2, 3, 4, 5}
+ * print(JSON:stringify_lua(t, "json")) --> [1,2,3,4,5]
+ */
+
+/**
+ * Convert a LuaJson element to a Lua table.
+ * @function array:totable
+ * @return table Lua table copy.
+ * @see object:totable
+ */
 
  // ####################################################################################### END API DOCUMENTATION ############################################################################################### //
 
@@ -95,8 +102,7 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-// max size allocated to parse a lua table
-#define MAX_LUA_SIZE  1048576 // 1MB should be enough for most cases, may need fine tuining per device type
+
 typedef struct ref ref;
 typedef struct json_elm json_elm;
 typedef struct lua_parser lua_parser;

@@ -24,7 +24,7 @@
 
 <div id="navigation">
 <br/>
-<h1>LuaJson5.1</h1>
+<h1>LuaJson</h1>
 
 
 <ul>
@@ -53,65 +53,77 @@
 <div id="content">
 
 <h1>Class <code>array</code></h1>
-<p>JSON.array Class</p>
-<p>
-
-</p>
+<p>Ordered JSON array.</p>
+<p> Arrays preserve order, render directly to JSON, and use zero-based numeric
+ indexes by default. The length operator (<code>#a</code>) returns the number of
+ elements; <code>a:len()</code> returns the rendered JSON byte length.</p>
 
 
 <h2><a href="#Methods">Methods</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#array:tojson">array:tojson (start, end, escape)</a></td>
-	<td class="summary">render an array as valid json array</td>
+	<td class="name" nowrap><a href="#array:tojson">array:tojson ([start[, finish[, escape]]])</a></td>
+	<td class="summary">Render the array as JSON.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#array:tolua">array:tolua (start, end, escape)</a></td>
-	<td class="summary">render an array as lua table dump</td>
+	<td class="name" nowrap><a href="#array:tolua">array:tolua ([start[, finish[, escape]]])</a></td>
+	<td class="summary">Render the array as a Lua table literal string.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#array:totable">array:totable ()</a></td>
-	<td class="summary">return lua json array as a lua table</td>
+	<td class="summary">Convert the array to a Lua table.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#array:move">array:move (move, to)</a></td>
-	<td class="summary">Move an element to position.</td>
+	<td class="name" nowrap><a href="#array:len">array:len ()</a></td>
+	<td class="summary">Return the rendered JSON byte length.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#array:insert">array:insert (pos, elm)</a></td>
-	<td class="summary">Inserts an element at position.</td>
+	<td class="name" nowrap><a href="#array:rlen">array:rlen (mode[, escape])</a></td>
+	<td class="summary">Return the rendered length for a specific output mode.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#array:json_base">array:json_base (base)</a></td>
+	<td class="summary">Switch numeric API calls between zero-based and one-based indexing.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#array:move">array:move (from, to)</a></td>
+	<td class="summary">Move an element to another position.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#array:insert">array:insert (pos, value)</a></td>
+	<td class="summary">Insert an element at a position.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#array:del">array:del (pos)</a></td>
-	<td class="summary">Deletes an element at position.</td>
+	<td class="summary">Delete an element at a position.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#array:reverse">array:reverse (from, to)</a></td>
-	<td class="summary">reverses the indexes of the elements of an array.</td>
+	<td class="name" nowrap><a href="#array:reverse">array:reverse ([from[, to]])</a></td>
+	<td class="summary">Reverse all or part of the array.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#array:push">array:push (elm)</a></td>
-	<td class="summary">Adds element to the end of an array.</td>
+	<td class="name" nowrap><a href="#array:push">array:push (value)</a></td>
+	<td class="summary">Append a value to the end of the array.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#array:pop">array:pop ()</a></td>
-	<td class="summary">Pops and returns the last element of an array.</td>
+	<td class="summary">Remove and return the last element.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#array:shift">array:shift ()</a></td>
-	<td class="summary">Removes element at index 0.</td>
+	<td class="summary">Remove and return the first element.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#array:unshift">array:unshift (elm[, ...])</a></td>
-	<td class="summary">adds one or more elements to the beginning of an array.</td>
+	<td class="name" nowrap><a href="#array:unshift">array:unshift (value[, ...])</a></td>
+	<td class="summary">Add one or more values to the beginning of the array.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#array:ref">array:ref ()</a></td>
-	<td class="summary">Creates a new reference to an existing array.</td>
+	<td class="summary">Create a new reference to the same backing array.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#array:unref">array:unref ()</a></td>
-	<td class="summary">Creates an unreferenced copy of an existing array.</td>
+	<td class="summary">Create an independent copy of the array.</td>
 	</tr>
 </table>
 
@@ -124,375 +136,24 @@
     <dl class="function">
     <dt>
     <a name = "array:tojson"></a>
-    <strong>array:tojson (start, end, escape)</strong>
+    <strong>array:tojson ([start[, finish[, escape]]])</strong>
     </dt>
     <dd>
-    render an array as valid json array
+    Render the array as JSON.
 
 
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">start</span>
-         number: start position (optional)
+         number Start index.
+         (<em>optional</em>)
         </li>
-        <li><span class="parameter">end</span>
-         number end position (optional)
-        </li>
-        <li><span class="parameter">escape</span>
-         boolean: escape output (optional)
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-        json string
-    </ol>
-
-
-    <h3>See also:</h3>
-    <ul>
-         <a href="../modules/JSON.html#.array">JSON:array</a>
-    </ul>
-
-    <h3>Usage:</h3>
-    <ul>
-        <li><pre class="example"><span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [1,2,3.45,"test",true,null]</span></pre></li>
-        <li><pre class="example"><span class="global">print</span>(a:<span class="function-name">tojson</span>(<span class="number">0</span>)) <span class="comment">--&gt; [1]</span></pre></li>
-        <li><pre class="example"><span class="global">print</span>(a:<span class="function-name">tojson</span>(<span class="number">4</span>,<span class="number">5</span>)) <span class="comment">--&gt; [true,null]</span></pre></li>
-        <li><pre class="example"><span class="global">print</span>(a:<span class="function-name">tojson</span>(<span class="number">0</span>,<span class="number">4</span>,<span class="keyword">true</span>)) <span class="comment">--&gt; [1,2,3.45,\"test\",true]</span></pre></li>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "array:tolua"></a>
-    <strong>array:tolua (start, end, escape)</strong>
-    </dt>
-    <dd>
-    render an array as lua table dump
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">start</span>
-         number: start position (optional)
-        </li>
-        <li><span class="parameter">end</span>
-         number end position (optional)
+        <li><span class="parameter">finish</span>
+         number End index.
+         (<em>optional</em>)
         </li>
         <li><span class="parameter">escape</span>
-         boolean: escape output (optional)
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-        lua tuble as string
-    </ol>
-
-
-    <h3>See also:</h3>
-    <ul>
-         <a href="../modules/JSON.html#.array">JSON:array</a>
-    </ul>
-
-    <h3>Usage:</h3>
-    <ul>
-        <li><pre class="example"><span class="global">print</span>(a:<span class="function-name">tolua</span>()) <span class="comment">--&gt; {1,2,3.45,"test",true,null}</span></pre></li>
-        <li><pre class="example"><span class="global">print</span>(a:<span class="function-name">tolua</span>(<span class="number">0</span>)) <span class="comment">--&gt; {1}</span></pre></li>
-        <li><pre class="example"><span class="global">print</span>(a:<span class="function-name">tolua</span>(<span class="number">4</span>,<span class="number">5</span>)) <span class="comment">--&gt; {true,null]}</span></pre></li>
-        <li><pre class="example"><span class="global">print</span>(a:<span class="function-name">tolua</span>(<span class="number">0</span>,<span class="number">4</span>,<span class="keyword">true</span>)) <span class="comment">--&gt; {1,2,3.45,\"test\",true}</span></pre></li>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "array:totable"></a>
-    <strong>array:totable ()</strong>
-    </dt>
-    <dd>
-    return lua json array as a lua table
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-        lua table
-    </ol>
-
-
-    <h3>See also:</h3>
-    <ul>
-         <a href="../modules/JSON.html#.array">JSON:array</a>
-    </ul>
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">t = a:<span class="function-name">totable</span>()
-<span class="global">print</span>(a) <span class="comment">--&gt; array: 0x627a723b1ad0
-</span><span class="global">print</span>(t) <span class="comment">--&gt; table: 0x627a723b70d0
-</span><span class="global">print</span>(t[<span class="number">4</span>]) <span class="comment">--&gt; test
-</span><span class="global">print</span>(a[<span class="number">3</span>]) <span class="comment">--&gt; test</span></pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "array:move"></a>
-    <strong>array:move (move, to)</strong>
-    </dt>
-    <dd>
-    Move an element to position.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">move</span>
-         number: index of item to move.
-        </li>
-        <li><span class="parameter">to</span>
-         number: index to move item to
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-        no value returned
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example"><span class="keyword">local</span> a = JSON:<span class="function-name">array</span>(<span class="number">1</span>,<span class="number">2</span>,<span class="number">3.45</span>,<span class="string">"test"</span>,<span class="keyword">true</span>,null)
-<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [1,2,3.45,"test",true,null]
-</span>a:<span class="function-name">move</span>(<span class="number">0</span>,<span class="number">5</span>)
-<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [2,3.45,"test",true,null,1]</span></pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "array:insert"></a>
-    <strong>array:insert (pos, elm)</strong>
-    </dt>
-    <dd>
-    Inserts an element at position.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">pos</span>
-         a valid index to insert item.
-        </li>
-        <li><span class="parameter">elm</span>
-         any
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-        updated length of array.
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example"><span class="keyword">local</span> a = JSON:<span class="function-name">array</span>(<span class="number">1</span>,<span class="number">2</span>,<span class="number">3.45</span>,<span class="string">"test"</span>,<span class="keyword">true</span>,null)
-<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [1,2,3.45,"test",true,null]
-</span>a:<span class="function-name">insert</span>(<span class="number">0</span>,<span class="number">0</span>)
-<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [0,1,2,3.45,"test",true,null]</span></pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "array:del"></a>
-    <strong>array:del (pos)</strong>
-    </dt>
-    <dd>
-    Deletes an element at position.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">pos</span>
-         index of item to be removed.
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-        the updated length of array.
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example"><span class="keyword">local</span> a = JSON:<span class="function-name">array</span>(<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>,<span class="number">3.45</span>,<span class="string">"test"</span>,<span class="keyword">true</span>,null)
-<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [0,1,2,3.45,"test",true,null]
-</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 30
-</span><span class="global">print</span>(#a) <span class="comment">--&gt; 7
-</span><span class="keyword">local</span> n = a:<span class="function-name">del</span>(<span class="number">4</span>)
-<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [0,1,2,3.45,true,null]
-</span><span class="global">print</span>(n)  <span class="comment">--&gt; 6
-</span><span class="global">print</span>(#a) <span class="comment">--&gt; 6
-</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 23</span></pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "array:reverse"></a>
-    <strong>array:reverse (from, to)</strong>
-    </dt>
-    <dd>
-    reverses the indexes of the elements of an array.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">from</span>
-         index to start of reversal. (optional)
-        </li>
-        <li><span class="parameter">to</span>
-         index to end of reversal. (optional)
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-        1 on success, 0 on failure.
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example"><span class="keyword">local</span> a = JSON:<span class="function-name">array</span>(<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>,<span class="number">3.45</span>,<span class="string">"test"</span>,<span class="keyword">true</span>,null)
-<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt;  [0,1,2,3.45,"test",true,null]
-</span>a:<span class="function-name">reverse</span>(<span class="number">0</span>,<span class="number">3</span>)
-<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt;  [3.45,2,1,0,"test",true,null]</span></pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "array:push"></a>
-    <strong>array:push (elm)</strong>
-    </dt>
-    <dd>
-    Adds element to the end of an array.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">elm</span>
-         Any
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-        the updated length of array.
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example"><span class="keyword">local</span> a = JSON:<span class="function-name">array</span>(<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>,<span class="number">3.45</span>,<span class="keyword">true</span>,null)
-<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [0,1,2,3.45,true,null]
-</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 23
-</span><span class="global">print</span>(#a) <span class="comment">--&gt; 6
-</span><span class="keyword">local</span> n = a:<span class="function-name">push</span>(<span class="string">"test"</span>)
-<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [0,1,2,3.45,true,null,"test"]
-</span><span class="global">print</span>(n)  <span class="comment">--&gt; 7
-</span><span class="global">print</span>(#a) <span class="comment">--&gt; 7
-</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 30</span></pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "array:pop"></a>
-    <strong>array:pop ()</strong>
-    </dt>
-    <dd>
-    Pops and returns the last element of an array.
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-        the popped element or nil if array is empty.
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example"><span class="keyword">local</span> a = JSON:<span class="function-name">array</span>(<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>,<span class="number">3.45</span>,<span class="keyword">true</span>,null)
-<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [0,1,2,3.45,true,null]
-</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 23
-</span><span class="global">print</span>(#a) <span class="comment">--&gt; 6
-</span><span class="keyword">local</span> n = a:<span class="function-name">pop</span>()
-<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [0,1,2,3.45,true]
-</span><span class="global">print</span>(n)  <span class="comment">--&gt; 5
-</span><span class="global">print</span>(#a) <span class="comment">--&gt; 5
-</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 11</span></pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "array:shift"></a>
-    <strong>array:shift ()</strong>
-    </dt>
-    <dd>
-    Removes element at index 0.
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-        the removed element or nil if array is empty.
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example"><span class="keyword">local</span> a = JSON:<span class="function-name">array</span>(<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>,<span class="number">3.45</span>,<span class="keyword">true</span>,null)
-<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [0,1,2,3.45,true,null]
-</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 23
-</span><span class="global">print</span>(#a) <span class="comment">--&gt; 6
-</span><span class="keyword">local</span> n = a:<span class="function-name">shift</span>()
-<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [1,2,3.45,true,null]
-</span><span class="global">print</span>(n)  <span class="comment">--&gt; 0
-</span><span class="global">print</span>(#a) <span class="comment">--&gt; 5
-</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 21</span></pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "array:unshift"></a>
-    <strong>array:unshift (elm[, ...])</strong>
-    </dt>
-    <dd>
-    adds one or more elements to the beginning of an array.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">elm</span>
-         Any
-        </li>
-        <li><span class="parameter">...</span>
-          Any
+         boolean Escape quotes in the returned string.
          (<em>optional</em>)
         </li>
     </ul>
@@ -500,23 +161,332 @@
     <h3>Returns:</h3>
     <ol>
 
-        the updated length of the array.
+        string JSON array text.
     </ol>
 
 
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example"><span class="keyword">local</span> a = JSON:<span class="function-name">array</span>(<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>,<span class="number">3.45</span>,<span class="keyword">true</span>,null)
-<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [0,1,2,3.45,true,null]
-</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 23
-</span><span class="global">print</span>(#a) <span class="comment">--&gt; 6
-</span><span class="keyword">local</span> n = a:<span class="function-name">unshift</span>(<span class="number">9</span>,<span class="number">8</span>,<span class="number">7</span>)
-<span class="global">print</span>(a:<span class="function-name">tojson</span>()) <span class="comment">--&gt; [9,8,7,0,1,2,3.45,true,null]
-</span><span class="global">print</span>(n)  <span class="comment">--&gt; 9
-</span><span class="global">print</span>(#a) <span class="comment">--&gt; 9
-</span><span class="global">print</span>(a:<span class="function-name">len</span>()) <span class="comment">--&gt; 29</span></pre>
+        <pre class="example"><span class="keyword">local</span> a = JSON:<span class="function-name">array</span>(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3.45</span>, <span class="string">"test"</span>, <span class="keyword">true</span>, null)
+<span class="global">print</span>(a:<span class="function-name">tojson</span>())          <span class="comment">--&gt; [1,2,3.45,"test",true,null]
+</span><span class="global">print</span>(a:<span class="function-name">tojson</span>(<span class="number">0</span>, <span class="number">2</span>))      <span class="comment">--&gt; [1,2,3.45]
+</span><span class="global">print</span>(a:<span class="function-name">tojson</span>(<span class="number">0</span>, <span class="number">2</span>, <span class="keyword">true</span>)) <span class="comment">--&gt; [1,2,3.45]</span></pre>
     </ul>
+
+</dd>
+    <dt>
+    <a name = "array:tolua"></a>
+    <strong>array:tolua ([start[, finish[, escape]]])</strong>
+    </dt>
+    <dd>
+    Render the array as a Lua table literal string.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">start</span>
+         number Start index.
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">finish</span>
+         number End index.
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">escape</span>
+         boolean Escape quotes in the returned string.
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        string Lua table literal.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "array:totable"></a>
+    <strong>array:totable ()</strong>
+    </dt>
+    <dd>
+    Convert the array to a Lua table.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        table Lua table copy.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "array:len"></a>
+    <strong>array:len ()</strong>
+    </dt>
+    <dd>
+    Return the rendered JSON byte length.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        number Rendered JSON length.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "array:rlen"></a>
+    <strong>array:rlen (mode[, escape])</strong>
+    </dt>
+    <dd>
+    Return the rendered length for a specific output mode.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">mode</span>
+         string <code>&quot;-j&quot;</code> for JSON or <code>&quot;-l&quot;</code> for Lua output.
+        </li>
+        <li><span class="parameter">escape</span>
+         boolean Include quote escaping in the length.
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        number Rendered length.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "array:json_base"></a>
+    <strong>array:json_base (base)</strong>
+    </dt>
+    <dd>
+    Switch numeric API calls between zero-based and one-based indexing.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">base</span>
+         number Pass <code>0</code> for JSON-style zero-based indexes or <code>1</code> for Lua-style one-based indexes.
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "array:move"></a>
+    <strong>array:move (from, to)</strong>
+    </dt>
+    <dd>
+    Move an element to another position.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">from</span>
+         number Index of the element to move.
+        </li>
+        <li><span class="parameter">to</span>
+         number Destination index.
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "array:insert"></a>
+    <strong>array:insert (pos, value)</strong>
+    </dt>
+    <dd>
+    Insert an element at a position.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">pos</span>
+         number Index where the value should be inserted.
+        </li>
+        <li><span class="parameter">value</span>
+         any Value to insert.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        number Updated element count.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "array:del"></a>
+    <strong>array:del (pos)</strong>
+    </dt>
+    <dd>
+    Delete an element at a position.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">pos</span>
+         number Index to remove.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        number Updated element count.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "array:reverse"></a>
+    <strong>array:reverse ([from[, to]])</strong>
+    </dt>
+    <dd>
+    Reverse all or part of the array.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">from</span>
+         number Start index.
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">to</span>
+         number End index.
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "array:push"></a>
+    <strong>array:push (value)</strong>
+    </dt>
+    <dd>
+    Append a value to the end of the array.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">value</span>
+         any Value to append.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        number Updated element count.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "array:pop"></a>
+    <strong>array:pop ()</strong>
+    </dt>
+    <dd>
+    Remove and return the last element.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        any Removed value, or <code>nil</code> when the array is empty.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "array:shift"></a>
+    <strong>array:shift ()</strong>
+    </dt>
+    <dd>
+    Remove and return the first element.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        any Removed value, or <code>nil</code> when the array is empty.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "array:unshift"></a>
+    <strong>array:unshift (value[, ...])</strong>
+    </dt>
+    <dd>
+    Add one or more values to the beginning of the array.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">value</span>
+         any First value to add.
+        </li>
+        <li><span class="parameter">...</span>
+         any Additional values.
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        number Updated element count.
+    </ol>
+
+
+
 
 </dd>
     <dt>
@@ -524,31 +494,18 @@
     <strong>array:ref ()</strong>
     </dt>
     <dd>
-    Creates a new reference to an existing array.  (pass by reference)
+    Create a new reference to the same backing array.
 
 
 
     <h3>Returns:</h3>
     <ol>
 
-        reference to array.
+        array Referenced array.
     </ol>
 
 
-    <h3>See also:</h3>
-    <ul>
-         <li><a href="../modules/JSON.html#.array">JSON.array</a></li>
-         <li><a href="../classes/array.html#array:unref">array:unref</a></li>
-    </ul>
 
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example"><span class="keyword">local</span> a_ref = a:<span class="function-name">ref</span>()
-<span class="global">print</span>(a_ref[<span class="number">0</span>]) <span class="comment">--&gt; 1
-</span><span class="global">print</span>(a_ref[#a_ref - <span class="number">1</span>]) <span class="comment">--&gt; true
-</span>a_ref[<span class="number">0</span>] = <span class="number">20</span>
-<span class="global">print</span>(a_ref[<span class="number">0</span>], a[<span class="number">0</span>]) <span class="comment">--&gt; 20    20</span></pre>
-    </ul>
 
 </dd>
     <dt>
@@ -556,30 +513,18 @@
     <strong>array:unref ()</strong>
     </dt>
     <dd>
-    Creates an unreferenced copy of an existing array.  (pass by value)
+    Create an independent copy of the array.
 
 
 
     <h3>Returns:</h3>
     <ol>
 
-        unreference an array. (create a seperate copy)
+        array Copied array.
     </ol>
 
 
-    <h3>See also:</h3>
-    <ul>
-         <li><a href="../modules/JSON.html#.array">JSON.array</a></li>
-         <li><a href="../classes/array.html#array:ref">array:ref</a></li>
-    </ul>
 
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example"><span class="keyword">local</span> a_copy = a:<span class="function-name">unref</span>()
-<span class="global">print</span>(a_copy[<span class="number">0</span>]) <span class="comment">--&gt; 1
-</span>a_copy[<span class="number">0</span>] = <span class="number">20</span>
-<span class="global">print</span>(a_copy[<span class="number">0</span>], a[<span class="number">0</span>]) <span class="comment">--&gt; 20    1</span></pre>
-    </ul>
 
 </dd>
 </dl>
@@ -589,7 +534,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
-<i style="float:right;">Last updated 2026-05-09 15:28:03 </i>
+<i style="float:right;">Last updated 2026-05-21 22:25:01 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>

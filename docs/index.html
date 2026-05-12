@@ -24,7 +24,7 @@
 
 <div id="navigation">
 <br/>
-<h1>LuaJson5.1</h1>
+<h1>LuaJson</h1>
 
 
 
@@ -49,26 +49,93 @@
   <h2>
 <h1>Introduction</h1>
 
-<p><strong>A High-Performance, Memory-Safe JSON Serializer for Lua 5.1+</strong></p>
+<p><strong>A High-Performance, Memory-Safe JSON Serializer for Lua 5.1, 5.3, and 5.4</strong></p>
 
-<p><img src="https://img.shields.io/badge/lua-safe-brightgreen" alt="Lua Safety"/> <img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Build Status"/> <img src="https://img.shields.io/badge/valgrind-clean-success" alt="Memory Leaks"/> <img src="https://img.shields.io/badge/license-GPLv2-blue" alt="License"/></p>
+<p><img src="https://img.shields.io/badge/lua-safe-brightgreen" alt="Lua Safety"/>
+<img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Build Status"/>
+<img src="https://img.shields.io/badge/valgrind-clean-success" alt="Memory Leaks"/>
+<img src="https://img.shields.io/badge/license-GPLv2-blue" alt="License"/></p>
 
-<p>LuaJson5.1 is not just another parser; it is a <strong>hardened serialization engine</strong> designed for stability under pressure. It features a unique <strong>Hybrid Trust Architecture</strong> that intelligently switches between zero-allocation stack operations for speed and sandboxed heap allocations for safety, ensuring your main Lua state never fragments or crashes on large payloads.</p>
+<p>LuaJson provides native <a href="classes/array.html#">array</a> and <a href="classes/object.html#">object</a> container types for Lua with
+high-performance JSON serialization, mutable JavaScript-style APIs, and
+memory-safe rendering paths.</p>
 
-<h2>LuaJson adds native objects and arrays types to the luaVM that act just like their respective JS coounterparts, with the exception that LuaJson objects can be treated ar arrays of key/value pairs  </h2>
+<p>Unlike standard Lua tables, LuaJson containers preserve insertion order,
+support positional mutation operations, and expose a dedicated serialization API.</p>
 
-<h2>🚀 Key Features</h2>
+<p>LuaJson objects and arrays support:</p>
 
 <ul>
-    <li><strong>Hybrid Execution Model:</strong> Automatically detects object size/complexity.
-    <ul>
-        <li><strong>Fast Path:</strong> Renders small, trusted objects directly on the C-Stack (Zero Allocation).</li>
-        <li><strong>Heavy Path:</strong> Large or "Stale" objects are rendered in a <strong>Sandboxed Temporary State</strong>, keeping your main GC clean.</li>
-    </ul></li>
-    <li><strong>The "Safety Fuse":</strong> A speculative execution engine that attempts the fast path first but instantly aborts and switches to the sandbox if a buffer overflow is imminent.</li>
-    <li><strong>Full CRUD API:</strong> specialized <a href="classes/array.html#">array</a> and <a href="classes/object.html#">object</a> classes with methods like <code>push</code>, <code>pop</code>, <code>shift</code>, <code>ref</code>, and <code>unref</code>.</li>
-    <li><strong>Valgrind Verified:</strong> 0 Bytes lost. 0 Errors. 100% Memory Integrity.</li>
+    <li>Ordered mutation operations</li>
+    <li>Fast JSON rendering</li>
+    <li>Lua table serialization</li>
+    <li>Reference-aware copy semantics</li>
+    <li>Circular reference protection</li>
+    <li>Cross-VM compatibility</li>
+    <li>Memory-safe rendering paths</li>
 </ul>
+
+<hr/>
+
+<h1>Steady-State DOM Construction Benchmark</h1>
+
+<p>On embedded ARM:</p>
+
+<ul>
+    <li>~0.56 ms (light run)</li>
+    <li>~0.98 ms (heavy/steady run)</li>
+    <li>~50–300 MB/s effective throughput range depending on measurement method</li>
+</ul>
+
+<h2>Full CRUD API</h2>
+
+<p>Specialized <a href="classes/array.html#">array</a> and <a href="classes/object.html#">object</a> classes with methods such as:</p>
+
+<ul>
+    <li>push / pop</li>
+    <li>shift / unshift</li>
+    <li>reverse / move</li>
+    <li>ref / unref</li>
+</ul>
+
+<hr/>
+
+<h2>Valgrind Verified</h2>
+<p>- 100% memory integrity</p>
+
+<hr/>
+
+<h2>Core Multi-VM Engine</h2>
+
+<p>Seamless native compilation support across Lua 5.1, 5.3, and 5.4 virtual machines.</p>
+
+<hr/>
+
+<h2>The Memory Shield</h2>
+
+<p>Clean element destructor sequencing scopes that eliminate Use-After-Free vectors,
+verified with a perfect zero-leak Valgrind pass.</p>
+
+<hr/>
+
+<h2>The Graph Guard</h2>
+
+<p>High-speed <code>O(1)</code> loop tracking maps that prevent circular references without
+code bloat.</p>
+
+<hr/>
+
+<h2>Standalone Public C API</h2>
+
+<p>A clean variadic reverse-dumpstack public wrapper library (<code>libluajson.so</code>)
+ready for independent projects.</p>
+
+<hr/>
+
+<h2>OpenWrt SDK Interface</h2>
+
+<p>Fully automated version-variant package deployment loops integrated directly
+into OpenWrt's native configuration environment.</p>
 
 <hr/>
 
@@ -78,22 +145,22 @@
 <table class="module_list">
 	<tr>
 		<td class="name"  nowrap><a href="modules/JSON.html">JSON</a></td>
-		<td class="summary">Base Class for all JSON elements</td>
+		<td class="summary">LuaJson module.</td>
 	</tr>
 </table>
 <h2>Classes</h2>
 <table class="module_list">
 	<tr>
 		<td class="name"  nowrap><a href="classes/array.html">array</a></td>
-		<td class="summary">JSON.array Class</td>
+		<td class="summary">Ordered JSON array.</td>
 	</tr>
 	<tr>
 		<td class="name"  nowrap><a href="classes/lua.html">lua</a></td>
-		<td class="summary">JSON.lua class</td>
+		<td class="summary">Lua table conversion helpers.</td>
 	</tr>
 	<tr>
 		<td class="name"  nowrap><a href="classes/object.html">object</a></td>
-		<td class="summary">JSON.object Class</td>
+		<td class="summary">Ordered JSON object.</td>
 	</tr>
 </table>
 
@@ -101,7 +168,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
-<i style="float:right;">Last updated 2026-05-09 15:28:03 </i>
+<i style="float:right;">Last updated 2026-05-21 22:25:01 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>

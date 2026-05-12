@@ -24,7 +24,7 @@
 
 <div id="navigation">
 <br/>
-<h1>LuaJson5.1</h1>
+<h1>LuaJson</h1>
 
 
 <ul>
@@ -53,57 +53,81 @@
 <div id="content">
 
 <h1>Class <code>object</code></h1>
-<p>JSON.object Class</p>
-<p>
-
-</p>
+<p>Ordered JSON object.</p>
+<p> Objects preserve insertion order and allow key-based or position-based
+ access. Numeric indexes address ordered key/value pairs; string indexes
+ address named fields.</p>
 
 
 <h2><a href="#Methods">Methods</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#object:tojson">object:tojson (start, end, escape)</a></td>
-	<td class="summary">render an object as valid json object</td>
+	<td class="name" nowrap><a href="#object:tojson">object:tojson ([start[, finish[, escape]]])</a></td>
+	<td class="summary">Render the object as JSON.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#object:tolua">object:tolua (start, end, escape)</a></td>
-	<td class="summary">render an object as a serialized lua table</td>
+	<td class="name" nowrap><a href="#object:tolua">object:tolua ([start[, finish[, escape]]])</a></td>
+	<td class="summary">Render the object as a Lua table literal string.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#object:totable">object:totable ()</a></td>
-	<td class="summary">return lua json object as a lua table</td>
+	<td class="summary">Convert the object to a Lua table.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#object:len">object:len ()</a></td>
+	<td class="summary">Return the rendered JSON byte length.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#object:rlen">object:rlen (mode[, escape])</a></td>
+	<td class="summary">Return the rendered length for a specific output mode.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#object:json_base">object:json_base (base)</a></td>
+	<td class="summary">Switch numeric API calls between zero-based and one-based indexing.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#object:keys">object:keys ()</a></td>
-	<td class="summary">Create a new array containing the keys of an object</td>
+	<td class="summary">Create an array containing this object's keys in insertion order.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#object:move">object:move (move, to)</a></td>
-	<td class="summary">move an existing key/value pair to any exisiting index</td>
+	<td class="name" nowrap><a href="#object:foreach">object:foreach (fn)</a></td>
+	<td class="summary">Iterate over key/value pairs until the callback returns a non-nil value.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#object:insert">object:insert (at, new, value)</a></td>
-	<td class="summary">insert new key/value pair at any existing position</td>
+	<td class="name" nowrap><a href="#object:move">object:move (from, to)</a></td>
+	<td class="summary">Move an existing key/value pair to another ordered position.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#object:insert">object:insert (at, key, value)</a></td>
+	<td class="summary">Insert a key/value pair at an ordered position.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#object:push">object:push (key, value)</a></td>
-	<td class="summary">push new key/value pair to end of object</td>
+	<td class="summary">Append a key/value pair to the object.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#object:pop">object:pop ()</a></td>
-	<td class="summary">pop the last key/value pair from object</td>
+	<td class="summary">Remove and return the last value.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#object:shift">object:shift ()</a></td>
-	<td class="summary">Remove the first key/value pair from object.</td>
+	<td class="summary">Remove and return the first value.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#object:unshift">object:unshift (key, val[, ...])</a></td>
-	<td class="summary">add one or more key/value pairs to the beginning of an object.</td>
+	<td class="name" nowrap><a href="#object:unshift">object:unshift (key, value[, ...])</a></td>
+	<td class="summary">Add one or more key/value pairs to the beginning of the object.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#object:reverse">object:reverse (from, to)</a></td>
-	<td class="summary">reverses the indexes of an object key/value pairs.</td>
+	<td class="name" nowrap><a href="#object:reverse">object:reverse ([from[, to]])</a></td>
+	<td class="summary">Reverse all or part of the ordered key list.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#object:ref">object:ref ()</a></td>
+	<td class="summary">Create a new reference to the same backing object.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#object:unref">object:unref ()</a></td>
+	<td class="summary">Create an independent copy of the object.</td>
 	</tr>
 </table>
 
@@ -116,321 +140,24 @@
     <dl class="function">
     <dt>
     <a name = "object:tojson"></a>
-    <strong>object:tojson (start, end, escape)</strong>
+    <strong>object:tojson ([start[, finish[, escape]]])</strong>
     </dt>
     <dd>
-    render an object as valid json object
+    Render the object as JSON.
 
 
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">start</span>
-         string or number: start position (optional)
+         string|number Start key or ordered index.
+         (<em>optional</em>)
         </li>
-        <li><span class="parameter">end</span>
-         string or number: end position (optional)
-        </li>
-        <li><span class="parameter">escape</span>
-         bool: escape output (optional)
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-        string: json string
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <li><pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null}</span></pre></li>
-        <li><pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>(<span class="number">0</span>)) <span class="comment">--&gt; {"test":"obj"}</span></pre></li>
-        <li><pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>(<span class="string">"test"</span>, <span class="string">"age"</span>)) <span class="comment">--&gt; {"test":"obj", "age", 99}</span></pre></li>
-        <li><pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>(<span class="number">1</span>,<span class="number">2</span>,<span class="keyword">true</span>)) <span class="comment">--&gt; {\"age\":99,\"root\":false}</span></pre></li>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "object:tolua"></a>
-    <strong>object:tolua (start, end, escape)</strong>
-    </dt>
-    <dd>
-    render an object as a serialized lua table
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">start</span>
-         string or number: start position (optional)
-        </li>
-        <li><span class="parameter">end</span>
-         string or number: end position (optional)
+        <li><span class="parameter">finish</span>
+         string|number End key or ordered index.
+         (<em>optional</em>)
         </li>
         <li><span class="parameter">escape</span>
-         bool: escape output (optional)
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-        string: serialized table
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <li><pre class="example"><span class="global">print</span>(obj:<span class="function-name">tolua</span>()) <span class="comment">--&gt; {test="obj",age=99,root=null,}</span></pre></li>
-        <li><pre class="example"><span class="global">print</span>(obj:<span class="function-name">tolua</span>(<span class="number">0</span>)) <span class="comment">--&gt; {test="obj"}</span></pre></li>
-        <li><pre class="example"><span class="global">print</span>(obj:<span class="function-name">tolua</span>(<span class="string">"test"</span>, <span class="string">"age"</span>)) <span class="comment">--&gt; {test="obj",age=99}</span></pre></li>
-        <li><pre class="example"><span class="global">print</span>(obj:<span class="function-name">tolua</span>(<span class="number">1</span>,<span class="number">2</span>,<span class="keyword">true</span>)) <span class="comment">--&gt; {test=\"obj\",age=99,root=false}</span></pre></li>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "object:totable"></a>
-    <strong>object:totable ()</strong>
-    </dt>
-    <dd>
-    return lua json object as a lua table
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-        lua table
-    </ol>
-
-
-    <h3>See also:</h3>
-    <ul>
-         <a href="../modules/JSON.html#.object">JSON:object</a>
-    </ul>
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example"><span class="keyword">local</span> t = o:<span class="function-name">totable</span>()
-<span class="global">print</span>(t) <span class="comment">--&gt; table: 0x627a723b6400
-</span><span class="global">print</span>(o) <span class="comment">--&gt; object: 0x627a723a9d30
-</span><span class="global">print</span>(o[<span class="number">0</span>]) <span class="comment">--&gt; test
-</span><span class="global">print</span>(t[<span class="number">1</span>]) <span class="comment">--&gt; test
-</span><span class="global">print</span>(o[<span class="number">2</span>]) <span class="comment">--&gt; null
-</span><span class="global">print</span>(t[<span class="number">3</span>]) <span class="comment">--&gt; null</span></pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "object:keys"></a>
-    <strong>object:keys ()</strong>
-    </dt>
-    <dd>
-    Create a new array containing the keys of an object
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-        array: json array of the objects keys
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null}
-</span><span class="keyword">local</span> keys = obj:<span class="function-name">keys</span>()
-<span class="global">print</span>(keys:<span class="function-name">tojson</span>())<span class="comment">--&gt; ["test","age","root"]</span></pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "object:move"></a>
-    <strong>object:move (move, to)</strong>
-    </dt>
-    <dd>
-    move an existing key/value pair to any exisiting index
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">move</span>
-         string or number: exisiting key or index of pair to move
-        </li>
-        <li><span class="parameter">to</span>
-         string or number: exisiting key or index a pair to start the shift right
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-        no value retured.
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null}
-</span>obj:<span class="function-name">move</span>(<span class="string">"root"</span>, <span class="string">"test"</span>)
-<span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"root":null,"test":"obj","age":99}</span></pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "object:insert"></a>
-    <strong>object:insert (at, new, value)</strong>
-    </dt>
-    <dd>
-    insert new key/value pair at any existing position
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">at</span>
-         string or number: exisitng key or index to insert the new pair
-        </li>
-        <li><span class="parameter">new</span>
-
-<pre><code>      string: new key
-</code></pre>
-
-        </li>
-        <li><span class="parameter">value</span>
-
-<pre><code>       any:  new value
-</code></pre>
-
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-        number: updated size of object.
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null}
-</span><span class="keyword">local</span> s = obj:<span class="function-name">insert</span>(<span class="number">0</span>, <span class="string">"new"</span>,<span class="string">"value"</span>)
-<span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"new":"value","test":"obj","root":null,"age":99}
-</span><span class="global">print</span>(s) <span class="comment">--&gt; 4 </span></pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "object:push"></a>
-    <strong>object:push (key, value)</strong>
-    </dt>
-    <dd>
-    push new key/value pair to end of object
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">key</span>
-         string: new key
-        </li>
-        <li><span class="parameter">value</span>
-         any: new value
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-        number: updated size of object.
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null}
-</span><span class="keyword">local</span> s = obj:<span class="function-name">push</span>(<span class="string">"new"</span>,<span class="string">"value"</span>)
-<span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null,"new":"value"}
-</span><span class="global">print</span>(s) <span class="comment">--&gt; 4</span></pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "object:pop"></a>
-    <strong>object:pop ()</strong>
-    </dt>
-    <dd>
-    pop the last key/value pair from object
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-        any: the popped value.
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null}
-</span><span class="keyword">local</span> p = obj:<span class="function-name">pop</span>()
-<span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99}
-</span><span class="global">print</span>(p) <span class="comment">--&gt; null</span></pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "object:shift"></a>
-    <strong>object:shift ()</strong>
-    </dt>
-    <dd>
-    Remove the first key/value pair from object.
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-        any: the shifted value.
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null}
-</span><span class="keyword">local</span> s = obj:<span class="function-name">shift</span>()
-<span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"age":99,"root":null}
-</span><span class="global">print</span>(s) <span class="comment">--&gt; obj</span></pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "object:unshift"></a>
-    <strong>object:unshift (key, val[, ...])</strong>
-    </dt>
-    <dd>
-    add one or more key/value pairs to the beginning of an object.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">key</span>
-         string: new key
-        </li>
-        <li><span class="parameter">val</span>
-         any: new value
-        </li>
-        <li><span class="parameter">...</span>
-          additional pairs
+         boolean Escape quotes in the returned string.
          (<em>optional</em>)
         </li>
     </ul>
@@ -438,52 +165,397 @@
     <h3>Returns:</h3>
     <ol>
 
-        number: the updated object size.
+        string JSON object text.
     </ol>
 
 
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null}
-</span><span class="keyword">local</span> npairs = obj:<span class="function-name">unshift</span>(<span class="string">"name"</span>, <span class="string">"teddy"</span>, <span class="string">"id"</span>, <span class="number">101</span>, <span class="string">"admin"</span>, <span class="keyword">false</span>))
-<span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"name":"teddy","id":101,"admin":false,"age":99,"root":null}
-</span><span class="global">print</span>(npairs) <span class="comment">--&gt; 5</span></pre>
+        <pre class="example"><span class="keyword">local</span> obj = JSON:<span class="function-name">object</span>(<span class="string">"name"</span>, <span class="string">"test"</span>, <span class="string">"value"</span>, <span class="number">42</span>, <span class="string">"root"</span>, null)
+<span class="global">print</span>(obj:<span class="function-name">tojson</span>())              <span class="comment">--&gt; {"name":"test","value":42,"root":null}
+</span><span class="global">print</span>(obj:<span class="function-name">tojson</span>(<span class="string">"name"</span>, <span class="string">"value"</span>)) <span class="comment">--&gt; {"name":"test","value":42}</span></pre>
     </ul>
 
 </dd>
     <dt>
-    <a name = "object:reverse"></a>
-    <strong>object:reverse (from, to)</strong>
+    <a name = "object:tolua"></a>
+    <strong>object:tolua ([start[, finish[, escape]]])</strong>
     </dt>
     <dd>
-    reverses the indexes of an object key/value pairs.
+    Render the object as a Lua table literal string.
 
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">from</span>
-         string or number: key or index to start reversal. (optional)
+        <li><span class="parameter">start</span>
+         string|number Start key or ordered index.
+         (<em>optional</em>)
         </li>
-        <li><span class="parameter">to</span>
-         string or number: key or index to end of reversal. (optional)
+        <li><span class="parameter">finish</span>
+         string|number End key or ordered index.
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">escape</span>
+         boolean Escape quotes in the returned string.
+         (<em>optional</em>)
         </li>
     </ul>
 
     <h3>Returns:</h3>
     <ol>
 
-        no value returned
+        string Lua table literal.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "object:totable"></a>
+    <strong>object:totable ()</strong>
+    </dt>
+    <dd>
+    Convert the object to a Lua table.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        table Lua table copy.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "object:len"></a>
+    <strong>object:len ()</strong>
+    </dt>
+    <dd>
+    Return the rendered JSON byte length.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        number Rendered JSON length.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "object:rlen"></a>
+    <strong>object:rlen (mode[, escape])</strong>
+    </dt>
+    <dd>
+    Return the rendered length for a specific output mode.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">mode</span>
+         string <code>&quot;-j&quot;</code> for JSON or <code>&quot;-l&quot;</code> for Lua output.
+        </li>
+        <li><span class="parameter">escape</span>
+         boolean Include quote escaping in the length.
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        number Rendered length.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "object:json_base"></a>
+    <strong>object:json_base (base)</strong>
+    </dt>
+    <dd>
+    Switch numeric API calls between zero-based and one-based indexing.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">base</span>
+         number Pass <code>0</code> for JSON-style zero-based indexes or <code>1</code> for Lua-style one-based indexes.
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "object:keys"></a>
+    <strong>object:keys ()</strong>
+    </dt>
+    <dd>
+    Create an array containing this object's keys in insertion order.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        array Array of keys.
     </ol>
 
 
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example"><span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {"test":"obj","age":99,"root":null, "name":"teddy"}
-</span>npairs = obj:<span class="function-name">reverse</span>(<span class="string">"test"</span>, <span class="string">"root"</span>))
-<span class="global">print</span>(obj:<span class="function-name">tojson</span>()) <span class="comment">--&gt; {""root":null,"age":99,test":"obj","name":"teddy"}</span></pre>
+        <pre class="example"><span class="keyword">local</span> keys = obj:<span class="function-name">keys</span>()
+ <span class="global">print</span>(keys:<span class="function-name">tojson</span>()) <span class="comment">--&gt; ["name","value","root"]</span></pre>
     </ul>
+
+</dd>
+    <dt>
+    <a name = "object:foreach"></a>
+    <strong>object:foreach (fn)</strong>
+    </dt>
+    <dd>
+    Iterate over key/value pairs until the callback returns a non-nil value.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">fn</span>
+         function Called as <code>fn(key, value)</code>.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        any First non-nil callback result, or no value when iteration completes.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "object:move"></a>
+    <strong>object:move (from, to)</strong>
+    </dt>
+    <dd>
+    Move an existing key/value pair to another ordered position.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">from</span>
+         string|number Existing key or ordered index.
+        </li>
+        <li><span class="parameter">to</span>
+         string|number Destination key or ordered index.
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "object:insert"></a>
+    <strong>object:insert (at, key, value)</strong>
+    </dt>
+    <dd>
+    Insert a key/value pair at an ordered position.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">at</span>
+         string|number Existing key or ordered index to insert before.
+        </li>
+        <li><span class="parameter">key</span>
+         string New key.
+        </li>
+        <li><span class="parameter">value</span>
+         any New value.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        number Updated pair count.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "object:push"></a>
+    <strong>object:push (key, value)</strong>
+    </dt>
+    <dd>
+    Append a key/value pair to the object.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">key</span>
+         string New key.
+        </li>
+        <li><span class="parameter">value</span>
+         any New value.
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "object:pop"></a>
+    <strong>object:pop ()</strong>
+    </dt>
+    <dd>
+    Remove and return the last value.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        any Removed value, or <code>nil</code> when the object is empty.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "object:shift"></a>
+    <strong>object:shift ()</strong>
+    </dt>
+    <dd>
+    Remove and return the first value.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        any Removed value, or <code>nil</code> when the object is empty.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "object:unshift"></a>
+    <strong>object:unshift (key, value[, ...])</strong>
+    </dt>
+    <dd>
+    Add one or more key/value pairs to the beginning of the object.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">key</span>
+         string First key.
+        </li>
+        <li><span class="parameter">value</span>
+         any First value.
+        </li>
+        <li><span class="parameter">...</span>
+         any Additional key/value pairs.
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        number Updated pair count.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "object:reverse"></a>
+    <strong>object:reverse ([from[, to]])</strong>
+    </dt>
+    <dd>
+    Reverse all or part of the ordered key list.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">from</span>
+         string|number Start key or ordered index.
+         (<em>optional</em>)
+        </li>
+        <li><span class="parameter">to</span>
+         string|number End key or ordered index.
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "object:ref"></a>
+    <strong>object:ref ()</strong>
+    </dt>
+    <dd>
+    Create a new reference to the same backing object.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        object Referenced object.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "object:unref"></a>
+    <strong>object:unref ()</strong>
+    </dt>
+    <dd>
+    Create an independent copy of the object.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        object Copied object.
+    </ol>
+
+
+
 
 </dd>
 </dl>
@@ -493,7 +565,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
-<i style="float:right;">Last updated 2026-05-09 15:28:03 </i>
+<i style="float:right;">Last updated 2026-05-21 22:25:01 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>

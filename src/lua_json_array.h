@@ -4,7 +4,7 @@
  *   Copyright (C) 2026 TheRootED24 <TheRootED24@gmail.com>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in JSONliance with the License.
+ *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
@@ -17,209 +17,139 @@
  */
  // ####################################################################################### API DOCUMENTATION ################################################################################################### //
 
- /**
-*JSON.array Class
-@classmod array
-*/
+/**
+ * Ordered JSON array.
+ *
+ * Arrays preserve order, render directly to JSON, and use zero-based numeric
+ * indexes by default. The length operator (`#a`) returns the number of
+ * elements; `a:len()` returns the rendered JSON byte length.
+ *
+ * @classmod array
+ */
 
 /**
- * render an array as valid json array
+ * Render the array as JSON.
  * @function array:tojson
- * @param start number: start position (optional)
- * @param end number end position (optional)
- * @param escape boolean: escape output (optional)
- * @return json string 
- * @see JSON:array
- * @usage print(a:tojson()) --> [1,2,3.45,"test",true,null]
- * @usage print(a:tojson(0)) --> [1]
- * @usage print(a:tojson(4,5)) --> [true,null]
- * @usage print(a:tojson(0,4,true)) --> [1,2,3.45,\"test\",true]
+ * @param[opt] start number Start index.
+ * @param[opt] finish number End index.
+ * @param[opt] escape boolean Escape quotes in the returned string.
+ * @return string JSON array text.
+ * @usage local a = JSON:array(1, 2, 3.45, "test", true, null)
+ * print(a:tojson())          --> [1,2,3.45,"test",true,null]
+ * print(a:tojson(0, 2))      --> [1,2,3.45]
+ * print(a:tojson(0, 2, true)) --> [1,2,3.45]
  */
-// static int lua_json_array_tojson(lua_State *L)
 
 /**
- * render an array as lua table dump
+ * Render the array as a Lua table literal string.
  * @function array:tolua
- * @param start number: start position (optional)
- * @param end number end position (optional)
- * @param escape boolean: escape output (optional)
- * @return lua tuble as string 
- * @see JSON:array
- * @usage print(a:tolua()) --> {1,2,3.45,"test",true,null}
- * @usage print(a:tolua(0)) --> {1}
- * @usage print(a:tolua(4,5)) --> {true,null]}
- * @usage print(a:tolua(0,4,true)) --> {1,2,3.45,\"test\",true}
+ * @param[opt] start number Start index.
+ * @param[opt] finish number End index.
+ * @param[opt] escape boolean Escape quotes in the returned string.
+ * @return string Lua table literal.
  */
-// static int lua_json_array_tojson(lua_State *L)
 
 /**
- * return lua json array as a lua table 
+ * Convert the array to a Lua table.
  * @function array:totable
- * @return lua table
- * @see JSON:array
- * @usage t = a:totable()
- * print(a) --> array: 0x627a723b1ad0
- * print(t) --> table: 0x627a723b70d0
- * print(t[4]) --> test
- * print(a[3]) --> test
+ * @return table Lua table copy.
  */
-// static int lua_json_array_tojson(lua_State *L)
 
 /**
- * Move an element to position. 
+ * Return the rendered JSON byte length.
+ * @function array:len
+ * @return number Rendered JSON length.
+ */
+
+/**
+ * Return the rendered length for a specific output mode.
+ * @function array:rlen
+ * @param mode string `"-j"` for JSON or `"-l"` for Lua output.
+ * @param[opt] escape boolean Include quote escaping in the length.
+ * @return number Rendered length.
+ */
+
+/**
+ * Switch numeric API calls between zero-based and one-based indexing.
+ * @function array:json_base
+ * @param base number Pass `0` for JSON-style zero-based indexes or `1` for Lua-style one-based indexes.
+ */
+
+/**
+ * Move an element to another position.
  * @function array:move
- * @param move number: index of item to move.
- * @param to number: index to move item to
- * @return  no value returned
- * @usage local a = JSON:array(1,2,3.45,"test",true,null)
- * print(a:tojson()) --> [1,2,3.45,"test",true,null]
- * a:move(0,5)
- * print(a:tojson()) --> [2,3.45,"test",true,null,1]
+ * @param from number Index of the element to move.
+ * @param to number Destination index.
  */
-//int lua_json_array_move(lua_State *L)
 
 /**
- * Inserts an element at position. 
+ * Insert an element at a position.
  * @function array:insert
- * @param pos a valid index to insert item.
- * @param elm any
- * @return  updated length of array.
- * @usage local a = JSON:array(1,2,3.45,"test",true,null)
- * print(a:tojson()) --> [1,2,3.45,"test",true,null]
- * a:insert(0,0)
- * print(a:tojson()) --> [0,1,2,3.45,"test",true,null]
+ * @param pos number Index where the value should be inserted.
+ * @param value any Value to insert.
+ * @return number Updated element count.
  */
-//int lua_json_array_insert(lua_State *L)
 
 /**
- * Deletes an element at position. 
+ * Delete an element at a position.
  * @function array:del
- * @param pos index of item to be removed.
- * @return  the updated length of array.
- * @usage local a = JSON:array(0,1,2,3.45,"test",true,null)
- * print(a:tojson()) --> [0,1,2,3.45,"test",true,null]
- * print(a:len()) --> 30
- * print(#a) --> 7
- * local n = a:del(4)
- * print(a:tojson()) --> [0,1,2,3.45,true,null]
- * print(n)  --> 6
- * print(#a) --> 6
- * print(a:len()) --> 23
+ * @param pos number Index to remove.
+ * @return number Updated element count.
  */
-//static int lua_json_elm_array_del(lua_State *L) 
 
 /**
- * reverses the indexes of the elements of an array.  
+ * Reverse all or part of the array.
  * @function array:reverse
- * @param from index to start of reversal. (optional)
- * @param to index to end of reversal. (optional)
- * @return 1 on success, 0 on failure.
- * @usage local a = JSON:array(0,1,2,3.45,"test",true,null)
- * print(a:tojson()) -->  [0,1,2,3.45,"test",true,null]
- * a:reverse(0,3)
- * print(a:tojson()) -->  [3.45,2,1,0,"test",true,null]
+ * @param[opt] from number Start index.
+ * @param[opt] to number End index.
  */
-//static int lua_json_elm_array_reverse(lua_State *L)
 
 /**
- * Adds element to the end of an array. 
+ * Append a value to the end of the array.
  * @function array:push
- * @param elm Any
- * @return the updated length of array.
- * @usage local a = JSON:array(0,1,2,3.45,true,null)
- * print(a:tojson()) --> [0,1,2,3.45,true,null]
- * print(a:len()) --> 23
- * print(#a) --> 6
- * local n = a:push("test")
- * print(a:tojson()) --> [0,1,2,3.45,true,null,"test"]
- * print(n)  --> 7
- * print(#a) --> 7
- * print(a:len()) --> 30
+ * @param value any Value to append.
+ * @return number Updated element count.
  */
-//static int lua_json_elm_array_push(lua_State *L)
 
 /**
- * Pops and returns the last element of an array. 
+ * Remove and return the last element.
  * @function array:pop
- * @return the popped element or nil if array is empty.
- * @usage local a = JSON:array(0,1,2,3.45,true,null)
- * print(a:tojson()) --> [0,1,2,3.45,true,null]
- * print(a:len()) --> 23
- * print(#a) --> 6
- * local n = a:pop()
- * print(a:tojson()) --> [0,1,2,3.45,true]
- * print(n)  --> 5
- * print(#a) --> 5
- * print(a:len()) --> 11
+ * @return any Removed value, or `nil` when the array is empty.
  */
-//int lua_json_elm_array_pop(lua_State *L)
 
 /**
- * Removes element at index 0. 
+ * Remove and return the first element.
  * @function array:shift
- * @return the removed element or nil if array is empty.
- * @usage local a = JSON:array(0,1,2,3.45,true,null)
- * print(a:tojson()) --> [0,1,2,3.45,true,null]
- * print(a:len()) --> 23
- * print(#a) --> 6
- * local n = a:shift()
- * print(a:tojson()) --> [1,2,3.45,true,null]
- * print(n)  --> 0
- * print(#a) --> 5
- * print(a:len()) --> 21
+ * @return any Removed value, or `nil` when the array is empty.
  */
-//static int lua_json_elm_array_shift(lua_State *L) 
 
 /**
- * adds one or more elements to the beginning of an array.
+ * Add one or more values to the beginning of the array.
  * @function array:unshift
- * @param elm Any
- * @param[opt] ...  Any
- * @return the updated length of the array.
- *  @usage local a = JSON:array(0,1,2,3.45,true,null)
- * print(a:tojson()) --> [0,1,2,3.45,true,null]
- * print(a:len()) --> 23
- * print(#a) --> 6
- * local n = a:unshift(9,8,7)
- * print(a:tojson()) --> [9,8,7,0,1,2,3.45,true,null]
- * print(n)  --> 9
- * print(#a) --> 9
- * print(a:len()) --> 29
+ * @param value any First value to add.
+ * @param[opt] ... any Additional values.
+ * @return number Updated element count.
  */
-//static int _lua_json_elm_array_unshift(lua_State *L)
 
 /**
- * Creates a new reference to an existing array. (pass by reference)
+ * Create a new reference to the same backing array.
  * @function array:ref
- * @return reference to array.
- * @usage local a_ref = a:ref()
- * print(a_ref[0]) --> 1
- * print(a_ref[#a_ref - 1]) --> true
- * a_ref[0] = 20
- * print(a_ref[0], a[0]) --> 20    20
- * @see JSON.array
- * @see array:unref
+ * @return array Referenced array.
  */
-//static int lua_json_array_ref(lua_State *L)
 
 /**
- * Creates an unreferenced copy of an existing array. (pass by value) 
+ * Create an independent copy of the array.
  * @function array:unref
- * @return unreference an array. (create a seperate copy)
- * @usage local a_copy = a:unref()
- * print(a_copy[0]) --> 1
- * a_copy[0] = 20
- * print(a_copy[0], a[0]) --> 20    1
- * @see JSON.array
- * @see array:ref
+ * @return array Copied array.
  */
-//int _lua_json_array_unref(lua_State *L)
 
 // ####################################################################################### END API DOCUMENTATION ############################################################################################### //
 
 
 #ifndef LUA_JSON_ARRAY_H
 #define LUA_JSON_ARRAY_H
+
+#define JSON_ARRAY_METHODS "JSON.array"
 
 #ifndef __cplusplus
 // LUA LIBS FOR gcc
@@ -249,6 +179,9 @@ extern "C" {
 
 typedef struct ref ref;
 typedef struct json_elm json_elm;
+typedef struct elm_ids elm_ids;
+typedef struct json_opts opts;
+
 extern const char *marshal_json[], *marshal_lua[], *fields[];
 
 void lua_json_open_array(lua_State *L);
@@ -256,5 +189,8 @@ int lua_json_array(lua_State *L);
 int lua_json_elm_parse_array(lua_State *L);
 int lua_json_array_insert(lua_State *L);
 int lua_json_elm_array_pop(lua_State *L);
+int lua_json_array_move(lua_State *L);
+int lua_json_array_reverse(lua_State *L);
+int lua_json_elm_array_push(lua_State *L);
 
 #endif

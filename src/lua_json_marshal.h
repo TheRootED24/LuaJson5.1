@@ -15,7 +15,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
+
 #ifndef LUA_JSON_MARSHAL_H
 #define LUA_JSON_MARSHAL_H
 
@@ -38,8 +38,8 @@ extern "C" {
 #include <stdint.h>
 #include <stdlib.h>
 #include <errno.h>
-// includes
 
+// includes
 #include "lua_json_array.h"
 #include "lua_json_object.h"
 #include "lua_json_lua.h"
@@ -49,6 +49,8 @@ extern "C" {
 #endif
 
 extern const char *NULL_CACHE;
+#define BASH_NULL "\"\""
+
 typedef struct ref ref;
 
 typedef enum LUA_JSON_TYPES JSON_TYPE;
