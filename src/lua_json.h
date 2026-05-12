@@ -68,6 +68,24 @@
 //int lua_json_elm_tojson(lua_State *L)
 
 /**
+ * parse a lua table into lua json element.
+ * @function .parse_table
+ * @param t lua table: table to parse
+ * @param as string: tac arg "-o" = parse as object | "-a" parse as array (optional)
+ * @param verbose string: tac arg "-v" = verbose output (optional)
+ * @param no_mixed boolean: silently ignore mixed values 
+ * @return an initialized lua json array or object. (is "as in not specified, default will output the type with the most parameters)
+ * @usage local t = {1,2,3.45,"test",true} --> 
+ * print(t) --> table: 0x5c92968f1c90
+ *
+ * local ta = JSON.parse_table(t)
+ * print(ta) --> array: 0x5c92968f09a8
+ * print(ta[0])  --> 1
+ * print(ta[2])  --> 3.45
+ * print(ta[#ta]) --> true
+ */
+
+/**
  * Serialize a lua table to json string.
  * @function .parse_lua
  * @param table lua table
@@ -173,6 +191,15 @@ extern "C" {
 }
 #endif
 
+// VERSION CONTROL MACROS //
+#if LUA_VERSION_NUM >= 502
+    #define lua_objlen(L, i) lua_rawlen(L, (i))
+#endif
+
+#if LUA_VERSION_NUM < 502
+	#define LUA_OK 0
+#endif 
+
 #if LUA_VERSION_NUM >= 504
     /* Lua 5.4 uses indexed uservalues (slot 1 is the legacy fenv equivalent) */
     #define get_json_table(L, i)  lua_getiuservalue(L, i, 1)
@@ -186,6 +213,43 @@ extern "C" {
     #define get_json_table(L, i)  lua_getfenv(L, i)
     #define set_json_table(L, i)  lua_setfenv(L, i)
 #endif
+
+#if LUA_VERSION_NUM >= 504
+    // Allocate 1 slot for our "fenv" replacement
+    #define json_newuserdata(L, s) lua_newuserdatauv(L, s, 1)
+#else
+    #define json_newuserdata(L, s) lua_newuserdata(L, s)
+#endif
+
+#if LUA_VERSION_NUM >= 502
+    // nup is the number of upvalues. For your NULL register calls, it's 0.
+    #define luaL_reg_stack(L, methods) luaL_setfuncs(L, methods, 0)
+#else
+    #define luaL_reg_stack(L, methods) luaL_register(L, NULL, methods)
+#endif
+
+#if LUA_VERSION_NUM >= 504
+    /* Lua 5.4: Init pushes the box, then we rotate/bury it to Index 1 */
+    #define INITIALIZE_JSON_BUFFER(L, B) \
+        luaL_buffinit(L, B); \
+        lua_insert(L, 1)
+
+    /* Lua 5.4: Bring the hidden Box from Index 1 to the top for the final push */
+    #define FINALIZE_JSON_BUFFER(L, B) \
+        lua_pushvalue(L, 1); \
+        luaL_pushresult(B)
+#else
+    /* Lua 5.1: Push a dummy pointer to Index 1, then init the buffer on top */
+    #define INITIALIZE_JSON_BUFFER(L, B) \
+        lua_pushlightuserdata(L, NULL); \
+        lua_insert(L, 1); \
+        luaL_buffinit(L, B)
+
+    /* Lua 5.1: Standard collapse (ignores the dummy pointer at Index 1) */
+    #define FINALIZE_JSON_BUFFER(L, B) \
+        luaL_pushresult(B)
+#endif
+// END OF VERSION CONTROL MACROS //
 
 #define VLEN_ADD(dst, src, sub_ptr) do {                                   \
     const elm_vlen *__s = (sub_ptr);                                       \
@@ -232,8 +296,8 @@ typedef enum {
 	JSON_STRING_TYPE,		// 3
 	JSON_ARRAY_TYPE,		// 4
 	JSON_OBJECT_TYPE,		// 5
-	JSON_NESTED_ARRAY_TYPE,	 	// 6
-	JSON_NESTED_OBJECT_TYPE, 	// 7
+	JSON_NESTED_ARRAY_TYPE,	// 6
+	JSON_NESTED_OBJECT_TYPE,// 7
 	JSON_ROOT_TYPE,			// 8
 	JSON_NULL_TYPE,			// 9
 	JSON_INVALID_TYPE		// 10
@@ -243,13 +307,15 @@ typedef enum {
 	ObjKey,     	//0
 	ObjString,  	//1
 	ObjNumber,  	//2
+	ObjInteger,  	//2
 	ObjBool,    	//3
-	ObjNull,	//4
+	ObjNull,		//4
 	ArrString,  	//5
 	ArrNumber,  	//6
+	ArrInteger,  	//6
 	ArrBool,    	//7
-	ArrNull,	//8
-	Next,   	//9
+	ArrNull,		//8
+	Next,   		//9
 	OpenObj,    	//10
 	CloseObj,   	//11
 	OpenArr,    	//12
@@ -258,8 +324,9 @@ typedef enum {
 	EscArrString,   //15
 	EscObjKey,    	//16
 	EscObjNumber, 	//17
-	EscObjBool,	//18
-	EscObjNull	//19
+	EscObjInteger, 	//17
+	EscObjBool,		//18
+	EscObjNull		//19
 }Type;
 
 typedef enum {
@@ -321,7 +388,6 @@ typedef struct elm_rlen {
 
 }elm_rlen;
 
-
 typedef struct elm_event {
 	json_elm *root;
 	struct Subject *on_newindex, *on_change, *on_env, *on_mutate;
@@ -382,13 +448,16 @@ typedef struct ref {
 	luaL_Buffer *B;
 	json_elm *elm, *nested;
 	marshal *marshal;
+	uintptr_t root, next;
 	uint8_t mode;
 	size_t rlen, quoted, nkeys, has_refs;
 	bool isRoot, escape, needs_state, trusted;
 	const char **Marshal;
 	size_t L_max;
 	size_t start, end;
-
+	int thread_ref;
+	bool(*check_next)(lua_State *, ref*, uintptr_t);
+	void(*clear_next)(lua_State *, ref *, uintptr_t);
 }ref;
 
 struct json_elm {
@@ -487,4 +556,5 @@ bool lua_json_is_printable(lua_State *L);
 uint16_t lua_json_elm_align_idx(json_elm *elm, int pos);
 uint16_t lua_json_elm_push_key(json_elm *elm, uint16_t pos);
 void lua_json_elm_push_idx(json_elm *elm, uint16_t pos);
+
 #endif 

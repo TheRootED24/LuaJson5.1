@@ -15,7 +15,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
+
 #include "lua_json_elm_event.h"
 
 // --- API Implementation ---

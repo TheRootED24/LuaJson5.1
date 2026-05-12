@@ -15,7 +15,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
+
 #ifndef LUA_JSON_MARSHAL_H
 #define LUA_JSON_MARSHAL_H
 

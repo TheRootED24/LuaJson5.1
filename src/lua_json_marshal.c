@@ -15,58 +15,63 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
+
 #include "lua_json_marshal.h"
 
 const char *marshal_json[] = {
-    "\"%s\":",		     // ObjKey      	0
-    "\"%s\":\"%s\"",	     // ObjString    1
-    "\"%s\":%f",	     // ObjNumber    2
-    "\"%s\":%s",	     // ObjBool      3
-    "\"%s\":%s",	     // ObjNull      4
-    "\"%s\"",		     // ArrString    5
-    "%f",		     // ArrNumber    6
-    "%s",		     // ArrBool      7
-    "%s",		     // ArrNull      8
-    ",",		     // JsonNext     9
-    "{",		     // OpenObj      10
-    "}",		     // CloseObj     11
-    "[",		     // OpenArr      12
-    "]",		     // CloseArr     13
-    "\\\"%s\\\":\\\"%s\\\"", // EscObjString 14
-    "\\\"%s\\\"",	     // EscArrString 15
-    "\\\"%s\\\":",	     // EscObjKey    16
-    "\\\"%s\\\":%f",	     // EscObjNumber 17
-    "\\\"%s\\\":%s",	     // EscObjBool   18
-    "\\\"%s\\\":%s"	     // EscObjNull   19
+    "\"%s\":",		  		 // ObjKey       0
+    "\"%s\":\"%s\"",  		 // ObjString    1
+    "\"%s\":%f",	  		 // ObjNumber    2
+    "\"%s\":%d",	  		 // ObjInteger   3
+    "\"%s\":%s",	  		 // ObjBool      3
+    "\"%s\":%s",	  		 // ObjNull      4
+    "\"%s\"",		  		 // ArrString    5
+    "%f",		      		 // ArrNumber    6
+    "%d",		      		 // ArrInteger   7
+    "%s",		      		 // ArrBool      8
+    "%s",		      		 // ArrNull      9
+    ",",		      		 // JsonNext     10
+    "{",		      		 // OpenObj      11
+    "}",		      		 // CloseObj     12
+    "[",		      		 // OpenArr      13
+    "]",		      		 // CloseArr     14
+    "\\\"%s\\\":\\\"%s\\\"", // EscObjString 15
+    "\\\"%s\\\"",	         // EscArrString 16
+    "\\\"%s\\\":",	         // EscObjKey    17
+    "\\\"%s\\\":%f",	     // EscObjNumber 18
+    "\\\"%s\\\":%d",	     // EscObjInteger19
+    "\\\"%s\\\":%s",	     // EscObjBool   20
+    "\\\"%s\\\":%s"	         // EscObjNull   21
 };
 
 const char *marshal_lua[] = {
-    "%s=",	     // ObjKey      	0
-    "%s=\"%s\"",     // ObjString    1
-    "%s=%f",	     // ObjNumber    2
-    "%s=%s",	     // ObjBool      3
-    "%s=%s",	     // ObjNull      4
-    "\"%s\"",	     // ArrString	5
-    "%f",	     // ArrNumber    6
-    "%s",	     // ArrBool      7
-    "%s",	     // ArrNull      8
-    ",",	     // Next     	9
-    "{",	     // OpenObj      10
-    "}",	     // CloseObj     11
-    "[",	     // OpenArr      12
-    "]",	     // CloseArr     13
-    "%s=\\\"%s\\\"", // EscObjString 14
-    "\\\"%s\\\"",    // EscArrString 15
-    "\\\"%s\\\":",   // EscObjKey    16
-    "\\\"%s\\\":%f", // EscObjNumber 17
-    "\\\"%s\\\":%s", // EscObjBool   18
-    "\\\"%s\\\":%s"  // EscObjNull   19
+    "%s=",	     			 // ObjKey       0
+    "%s=\"%s\"",     		 // ObjString    1
+    "%s=%f",	     		 // ObjNumber    2
+    "%s=%d",	     		 // ObjInteger   2
+    "%s=%s",	     		 // ObjBool      3
+    "%s=%s",	     		 // ObjNull      4
+    "\"%s\"",	     		 // ArrString    5
+    "%f",	     			 // ArrNumber    6
+    "%d",	     			 // ArrInteger   6
+    "%s",	     			 // ArrBool      7
+    "%s",	     			 // ArrNull      8
+    ",",	     			 // Next         9
+    "{",	     			 // OpenObj      10
+    "}",	     			 // CloseObj     11
+    "[",	     			 // OpenArr      12
+    "]",	     			 // CloseArr     13
+    "%s=\\\"%s\\\"", 		 // EscObjString 14
+    "\\\"%s\\\"",    		 // EscArrString 15
+    "\\\"%s\\\":",   		 // EscObjKey    16
+    "\\\"%s\\\":%f", 		 // EscObjNumber 17
+    "\\\"%s\\\":%d", 		 // EscObjInteger17
+    "\\\"%s\\\":%s", 		 // EscObjBool   18
+    "\\\"%s\\\":%s"  		 // EscObjNull   19
 
 };
 
-static int
-marshal_next(ref *seen)
+static int marshal_next(ref *seen)
 {
 	// strcat(seen->b, seen->Marshal[Next]);
 	luaL_addstring(seen->B, seen->Marshal[Next]);
@@ -76,8 +81,7 @@ marshal_next(ref *seen)
 
 // ****************************** MARSHAL OBJECT ELEMENT ******************************************
 
-static int
-marshal_object_open(ref *seen)
+static int marshal_object_open(ref *seen)
 {
 	// strcat(seen->b, seen->Marshal[OpenObj]);
 	luaL_addstring(seen->B, seen->Marshal[OpenObj]);
@@ -85,16 +89,13 @@ marshal_object_open(ref *seen)
 	return 0;
 };
 
-static int
-marshal_object_close(ref *seen)
+static int marshal_object_close(ref *seen)
 {
-	// strcat(seen->b, seen->Marshal[CloseObj]);
 	luaL_addstring(seen->B, seen->Marshal[CloseObj]);
 	return 0;
 };
 
-static int
-marshal_object_key(lua_State *L, json_elm *elm, ref *seen)
+static int marshal_object_key(lua_State *L, json_elm *elm, ref *seen)
 {
 	// lua_pushfstring pushes the result and returns a pointer to it.
 	if (seen->escape && seen->mode == MARSHAL_JSON)
@@ -141,18 +142,28 @@ static int marshal_object_string(lua_State *L, json_elm *elm, ref *seen)
 
 static int marshal_object_number(lua_State *L, json_elm *elm, ref *seen)
 {
-	lua_pushvalue(L, -1); // Stack: [..., val, val_copy]
+    lua_pushvalue(L, -1); 
 
-	if (seen->escape && seen->mode == MARSHAL_JSON)
-		luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[EscObjNumber], elm->key, luaL_checknumber(L, -1)));
-	else
-		luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[ObjNumber], elm->key, luaL_checknumber(L, -1)));
+#if LUA_VERSION_NUM >= 503
+    if (lua_isinteger(L, -1)) {
+        // Use Integer Path
+        const char *fmt = (seen->escape && seen->mode == MARSHAL_JSON) 
+                          ? seen->Marshal[EscObjInteger] 
+                          : seen->Marshal[ObjInteger];
+        luaL_addstring(seen->B, lua_pushfstring(L, fmt, elm->key, lua_tointeger(L, -1)));
+    } else 
+#endif
+    {
+        // Default Float Path (Original 5.1 logic)
+        const char *fmt = (seen->escape && seen->mode == MARSHAL_JSON) 
+                          ? seen->Marshal[EscObjNumber] 
+                          : seen->Marshal[ObjNumber];
+        luaL_addstring(seen->B, lua_pushfstring(L, fmt, elm->key, luaL_checknumber(L, -1)));
+    }
 
-	// Stack: [..., val, val_copy, fmt_string]
-	lua_pop(L, 2); // Pop val_copy and fmt_string. Stack: [..., val]
-	seen->nkeys++;
-
-	return 0;
+    lua_pop(L, 2); 
+    seen->nkeys++;
+    return 0;
 }
 
 static int marshal_object_bool(lua_State *L, json_elm *elm, ref *seen)
@@ -185,8 +196,7 @@ static int marshal_array_close(ref *seen)
 	return 0;
 }
 
-static int
-marshal_array_string(lua_State *L, json_elm *elm, ref *seen)
+static int marshal_array_string(lua_State *L, json_elm *elm, ref *seen)
 {
 	// 1. Get pointer to source string
 	elm->val = luaL_checklstring(L, -1, &elm->vlen);
@@ -212,15 +222,23 @@ marshal_array_string(lua_State *L, json_elm *elm, ref *seen)
 
 static int marshal_array_number(lua_State *L, ref *seen)
 {
-	lua_pushvalue(L, -1); // Stack: [..., val, val_copy]
+    lua_pushvalue(L, -1); // Stack: [..., val, val_copy]
 
-	// Append formatted number to Buffer
-	luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[ArrNumber], luaL_checknumber(L, -1)));
+#if LUA_VERSION_NUM >= 503
+    if (lua_isinteger(L, -1)) {
+        // Use the new ArrInteger format (should be %I)
+        luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[ArrInteger], lua_tointeger(L, -1)));
+    } else 
+#endif
+    {
+        // Default Float Path (Original 5.1 logic)
+        luaL_addstring(seen->B, lua_pushfstring(L, seen->Marshal[ArrNumber], luaL_checknumber(L, -1)));
+    }
 
-	// Pop val_copy and the string pushed by lua_pushfstring
-	lua_pop(L, 2);
+    // Pop val_copy and the string pushed by lua_pushfstring
+    lua_pop(L, 2);
 
-	return 0;
+    return 0;
 }
 
 static int marshal_array_bool(lua_State *L, ref *seen)

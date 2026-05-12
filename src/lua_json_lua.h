@@ -25,14 +25,16 @@
 
 /**
  * Convert a lua table to a lua json element.
- * @function .parse_lua
- * @param tname name of new element
- * @param t lua table
- * @return an initialized lua json array or object.
+ * @function .parse_table
+ * @param t lua table: table to parse
+ * @param as string: tac arg "-o" = parse as object | "-a" parse as array (optional)
+ * @param verbose string: tac arg "-v" = verbose output (optional)
+ * @param no_mixed boolean: silently ignore mixed values 
+ * @return an initialized lua json array or object. (is "as in not specified, default will output the type with the most parameters)
  * @usage local t = {1,2,3.45,"test",true} --> 
  * print(t) --> table: 0x5c92968f1c90
  *
- * local ta = JSON.parse_lua(ta, t)
+ * local ta = JSON.parse_table( t)
  * print(ta) --> array: 0x5c92968f09a8
  * print(ta[0])  --> 1
  * print(ta[2])  --> 3.45

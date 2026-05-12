@@ -249,6 +249,9 @@ extern "C" {
 
 typedef struct ref ref;
 typedef struct json_elm json_elm;
+typedef struct elm_ids elm_ids;
+typedef struct json_opts opts;
+
 extern const char *marshal_json[], *marshal_lua[], *fields[];
 
 void lua_json_open_array(lua_State *L);
