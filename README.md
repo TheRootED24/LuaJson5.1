@@ -1,4 +1,4 @@
-# LuaJson5.1 - Native Json types and json handling for lua
+# LuaJson - Native Json types and json handling for lua
 
 # Features 
 - 0 based indexing for arrays and objects, can also be set to 1 based via :json_index(false) method
