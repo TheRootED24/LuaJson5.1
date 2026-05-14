@@ -19,7 +19,7 @@
 -  Parse large(30mb) json payload --> 1000 cycles: Total Parse Time: 4795.156 ms  Per Full Array Parse: (29939 bytes) 4.7952 ms (luajit would liekly speed it up more yet 
 
 # API Reference
-https://therooted24.github.io/LuaJson5.1/
+https://therooted24.github.io/LuaJson/
 
 # Demos 
 
