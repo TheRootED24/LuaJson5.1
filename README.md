@@ -262,7 +262,7 @@ bash output
 hostle@hostle-Inc:~/luajson-c-api/src$ ./test-bash.bash
 === 1. Invoking C/Lua Engine for Nested Payload ===
 Generated Bash Payload:
-([arr]="(\"🍕 Food\" \"🎵 Music\" \"💻 Tech\")" [age]=99 [root]="false" [test]="me")
+([age]=99 [root]="false" [arr]="(\"🍕 Food\" \"🎵 Music\" \"💻 Tech\")" [test]="me")
 --------------------------------------------------------
 
 === 2. Parsing the Parent Object ===
