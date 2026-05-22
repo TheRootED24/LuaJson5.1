@@ -223,7 +223,7 @@ As of version 1.1.2, luaJson can produce valid bash associative arrays (dictiona
 
 echo "=== 1. Invoking C/Lua Engine for Nested Payload ==="
 # Call luajson with args and request an object -o with a nested array -a
-parent_obj=$(./luajson -bash -o "test" "me" "age" 99 "root" false -a "arr" "🍕 Food" "🎵 Music" "💻 Tech")
+parent_obj=$(./luajson -bash -o "test" "me" "age" 99 "root" false "arr" -a "🍕 Food" "🎵 Music" "💻 Tech")
 # Capture the output from script.
 
 echo "Generated Bash Payload:"
